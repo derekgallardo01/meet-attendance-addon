@@ -133,28 +133,31 @@
 
     /* ── controls ────────────────────────────────────────────── */
     .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      padding: 10px 16px;
+      display: flex;
+      gap: 5px;
+      padding: 10px 12px;
       flex-shrink: 0;
       border-bottom: 1px solid var(--border);
     }
 
     button {
       font-family: var(--font-sans);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       border: none;
       border-radius: var(--radius);
       cursor: pointer;
-      padding: 7px 14px;
+      padding: 6px 10px;
       transition: all .15s;
       letter-spacing: .02em;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      white-space: nowrap;
+      flex: 1;
+      justify-content: center;
     }
+
     button:disabled { opacity: .4; cursor: not-allowed; }
 
     .btn-primary {
@@ -379,11 +382,11 @@
     </button>
     <button class="btn-secondary" id="btn-refresh" onclick="refreshAttendance()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Refresh
+      Sync
     </button>
     <button class="btn-secondary" id="btn-sheets" onclick="saveToSheets()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Sheets
+      Sheet
     </button>
     <button class="btn-danger" id="btn-export" onclick="exportCSV()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -436,7 +439,7 @@ const state = {
   participants:  new Map(),   // displayName → { joinTime, leaveTime, present }
   refreshTimer:  null,
   sdk:           null,
-  backendUrl:    '/api',      // ← change to your backend base URL
+  backendUrl:    'https://meet-attendance-backend-415551639811.us-central1.run.app/api',
 };
 
 /* ═══════════════════════════════════════════════════════════════

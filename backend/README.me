@@ -1,0 +1,107 @@
+# Meet Attendance Backend
+
+Node.js + Express backend for the Meet Attendance Tracker add-on.
+Deployed on Google Cloud Run.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/attendance?conferenceId=xxx` | Returns real participants from Meet API |
+| POST | `/api/save-to-sheets` | Saves attendance to Google Sheets |
+| GET | `/` | Health check |
+
+---
+
+## Deployment to Cloud Run
+
+### Prerequisites
+- Google Cloud CLI installed: https://cloud.google.com/sdk/docs/install
+- Logged in: `gcloud auth login`
+- Project set: `gcloud config set project the-yacht-group`
+
+---
+
+### Step 1 — Create a Service Account
+
+```bash
+gcloud iam service-accounts create meet-attendance-sa \
+  --display-name="Meet Attendance Service Account"
+```
+
+### Step 2 — Grant required roles
+
+```bash
+# Meet API read access
+gcloud projects add-iam-policy-binding the-yacht-group \
+  --member="serviceAccount:meet-attendance-sa@the-yacht-group.iam.gserviceaccount.com" \
+  --role="roles/meet.spaceViewer"
+
+# Sheets write access (if using Sheets feature)
+gcloud projects add-iam-policy-binding the-yacht-group \
+  --member="serviceAccount:meet-attendance-sa@the-yacht-group.iam.gserviceaccount.com" \
+  --role="roles/sheets.editor"
+```
+
+### Step 3 — Create your Google Sheet (for Sheets feature)
+
+1. Go to sheets.google.com and create a new blank sheet
+2. Copy the Sheet ID from the URL:
+   `https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit`
+3. Share the sheet with the service account email:
+   `meet-attendance-sa@the-yacht-group.iam.gserviceaccount.com`
+   (give it Editor access)
+
+### Step 4 — Deploy to Cloud Run
+
+```bash
+gcloud run deploy meet-attendance-backend \
+  --source . \
+  --region us-central1 \
+  --service-account meet-attendance-sa@the-yacht-group.iam.gserviceaccount.com \
+  --set-env-vars SHEET_ID=YOUR_SHEET_ID_HERE \
+  --allow-unauthenticated \
+  --project the-yacht-group
+```
+
+This builds the Docker image, pushes to Artifact Registry, and deploys.
+Takes about 2-3 minutes. You'll get a URL like:
+```
+https://meet-attendance-backend-xxxxxxxx-uc.a.run.app
+```
+
+### Step 5 — Update index.html with backend URL
+
+In your `meet-attendance-addon` repo, open `index.html` and find:
+```js
+state.backendUrl = '/api';
+```
+Change it to:
+```js
+state.backendUrl = 'https://meet-attendance-backend-xxxxxxxx-uc.a.run.app/api';
+```
+Then commit and push.
+
+---
+
+## Local Development
+
+```bash
+npm install
+
+# Set up credentials locally
+export GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
+export SHEET_ID=your_sheet_id
+
+npm run dev
+# Server runs on http://localhost:8080
+```
+
+---
+
+## Notes on Conference ID
+
+The Meet SDK returns a `conferenceId` which is the meeting code (e.g. `abc-defg-hij`).
+The Meet REST API uses this to look up `conferenceRecords`.
+Note: `conferenceRecords` are only available AFTER a meeting starts and may have a
+short delay. If participants show empty, wait 30-60 seconds after joining and refresh.
