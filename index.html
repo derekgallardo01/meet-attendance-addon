@@ -425,43 +425,30 @@ const state = {
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
 ═══════════════════════════════════════════════════════════════ */
-async function waitForSDK(retries = 20, delay = 300) {
-  for (let i = 0; i < retries; i++) {
-    if (typeof meet !== 'undefined' && meet?.addon?.createAddonSession) return true;
-    await new Promise(r => setTimeout(r, delay));
-  }
-  return false;
-}
-
 async function initSDK() {
   try {
-    const ready = await waitForSDK();
-    if (!ready) {
-      throw new Error('Meet SDK not available (not running inside Meet)');
-    }
-
-    const session = await meet.addon.createAddonSession({
+    // createAddonSession() MUST be called as soon as content is ready —
+    // this is what tells Meet to dismiss the loading spinner.
+    const session = await window.meet.addon.createAddonSession({
       cloudProjectNumber: '415551639811',
     });
 
     state.sdk = session;
 
-    // Get meeting info
-    const meetingInfo = await session.getMeetingInfo();
+    // Create the side panel client — required for side panel add-ons
+    const sidePanelClient = await session.createSidePanelClient();
+
+    // Get meeting info from the side panel client
+    const meetingInfo = await sidePanelClient.getMeetingInfo();
     state.conferenceId = meetingInfo.conferenceId || null;
     state.meetingTitle = meetingInfo.meetingTitle || 'Google Meet';
 
     document.getElementById('meeting-title').textContent = state.meetingTitle;
     setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
 
-    // Listen for participant changes (if SDK exposes it in your version)
-    try {
-      session.on('participantschanged', () => refreshAttendance());
-    } catch (_) { /* not all SDK versions expose this event */ }
-
   } catch (err) {
     console.warn('SDK init:', err.message);
-    // Running outside Meet (dev/preview mode) — fall back to demo data
+    // Running outside Meet — fall back to demo data
     document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
     setStatus('loading', 'Running outside Meet — showing demo data');
   }
