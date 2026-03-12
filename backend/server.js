@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
+const { meet: meetLib } = require('@googleapis/meet');
 
 const app = express();
 app.use(express.json());
 
-// Allow requests from GitHub Pages and Meet iframe
 app.use(cors({
   origin: [
     'https://derekgallardo01.github.io',
@@ -13,7 +13,6 @@ app.use(cors({
   ],
 }));
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 async function getAuthClient() {
   const auth = new google.auth.GoogleAuth({
     scopes: [
@@ -27,83 +26,72 @@ async function getAuthClient() {
 // ── GET /api/attendance ───────────────────────────────────────────────────────
 app.get('/api/attendance', async (req, res) => {
   const { conferenceId } = req.query;
-
-  if (!conferenceId) {
-    return res.status(400).json({ error: 'conferenceId is required' });
-  }
+  if (!conferenceId) return res.status(400).json({ error: 'conferenceId is required' });
 
   try {
     const authClient = await getAuthClient();
-    const meet = google.meet({ version: 'v2', auth: authClient });
+    const meetClient = meetLib({ version: 'v2', auth: authClient });
 
-    // Try meeting_code filter first (e.g. "abc-defg-hij")
     let records = [];
 
+    // Try meeting_code filter first (SDK meetingCode e.g. "cop-mmie-vug")
     try {
-      const r = await meet.conferenceRecords.list({
+      const r = await meetClient.conferenceRecords.list({
         filter: `space.meeting_code="${conferenceId}"`,
       });
       records = r.data.conferenceRecords || [];
-      console.log(`meeting_code filter returned ${records.length} records`);
+      console.log(`[meeting_code] found ${records.length} records`);
     } catch (e) {
-      console.warn('meeting_code filter failed:', e.message);
+      console.warn('[meeting_code] failed:', e.message);
     }
 
-    // Fallback: try as space name (meetingId format)
+    // Fallback: space.name filter (SDK meetingId e.g. "spaces/Wv6f_rMi17IB")
     if (records.length === 0) {
       try {
-        const r = await meet.conferenceRecords.list({
-          filter: `space.name="spaces/${conferenceId}"`,
+        const spaceName = conferenceId.startsWith('spaces/') ? conferenceId : `spaces/${conferenceId}`;
+        const r = await meetClient.conferenceRecords.list({
+          filter: `space.name="${spaceName}"`,
         });
         records = r.data.conferenceRecords || [];
-        console.log(`space.name filter returned ${records.length} records`);
+        console.log(`[space.name] found ${records.length} records`);
       } catch (e) {
-        console.warn('space.name filter failed:', e.message);
+        console.warn('[space.name] failed:', e.message);
       }
     }
 
     if (records.length === 0) {
       return res.json({
         participants: [],
-        message: 'No conference record yet — meeting may still be starting, try refreshing in 30s',
+        message: 'No conference record yet — meeting may still be live. Try refreshing in 30s.',
       });
     }
 
-    // Use the most recent record
     const conferenceRecord = records[records.length - 1];
     const conferenceName = conferenceRecord.name;
-    console.log('Using conference record:', conferenceName);
+    console.log('Using conferenceRecord:', conferenceName);
 
-    // List participants
-    const participantsResp = await meet.conferenceRecords.participants.list({
+    const participantsResp = await meetClient.conferenceRecords.participants.list({
       parent: conferenceName,
     });
-
     const rawParticipants = participantsResp.data.participants || [];
     console.log(`Found ${rawParticipants.length} participants`);
 
-    // For each participant, get their sessions
     const participants = await Promise.all(
       rawParticipants.map(async (p) => {
-        const sessionsResp = await meet.conferenceRecords.participants.participantSessions.list({
+        const sessionsResp = await meetClient.conferenceRecords.participants.participantSessions.list({
           parent: p.name,
         });
-
         const sessions = sessionsResp.data.participantSessions || [];
 
-        const joinTimes = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
+        const joinTimes  = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
         const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
-
-        const joinTime  = joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null;
-        const leaveTime = leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null;
-        const present   = sessions.some(s => !s.endTime);
 
         return {
           displayName: p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
-          joinTime,
-          leaveTime,
-          present,
-          sessions: sessions.length,
+          joinTime:  joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
+          leaveTime: leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
+          present:   sessions.some(s => !s.endTime),
+          sessions:  sessions.length,
         };
       })
     );
@@ -118,12 +106,9 @@ app.get('/api/attendance', async (req, res) => {
 
 // ── POST /api/save-to-sheets ──────────────────────────────────────────────────
 app.post('/api/save-to-sheets', async (req, res) => {
-  const { meetingTitle, conferenceId, exportedAt, participants } = req.body;
-
+  const { meetingTitle, exportedAt, participants } = req.body;
   const sheetId = process.env.SHEET_ID;
-  if (!sheetId) {
-    return res.status(500).json({ error: 'SHEET_ID environment variable not set' });
-  }
+  if (!sheetId) return res.status(500).json({ error: 'SHEET_ID env var not set' });
 
   try {
     const authClient = await getAuthClient();
@@ -133,9 +118,7 @@ app.post('/api/save-to-sheets', async (req, res) => {
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
-      requestBody: {
-        requests: [{ addSheet: { properties: { title: tabName } } }],
-      },
+      requestBody: { requests: [{ addSheet: { properties: { title: tabName } } }] },
     });
 
     const header = ['Name', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
@@ -147,8 +130,7 @@ app.post('/api/save-to-sheets', async (req, res) => {
         p.displayName,
         p.joinTime  ? new Date(p.joinTime).toLocaleString()  : '',
         p.leaveTime ? new Date(p.leaveTime).toLocaleString() : '',
-        dur,
-        p.sessions,
+        dur, p.sessions,
         p.present ? 'Present' : 'Left',
       ];
     });
@@ -168,7 +150,6 @@ app.post('/api/save-to-sheets', async (req, res) => {
   }
 });
 
-// ── Health check ──────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'meet-attendance-backend' }));
 
 const PORT = process.env.PORT || 8080;
