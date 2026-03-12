@@ -491,6 +491,9 @@ async function initSDK() {
     document.getElementById('meeting-title').textContent = state.meetingTitle;
     setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
 
+    // Auto-start tracking so rejoining does not require clicking Start again
+    if (state.conferenceId) { startTracking(); }
+
   } catch (err) {
     console.error('[Attendance] SDK error:', err.message);
     document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
@@ -515,13 +518,26 @@ function startTracking() {
   startDurationTimer();
   refreshAttendance();
 
-  // Auto-refresh every 45 s
-  state.refreshTimer = setInterval(refreshAttendance, 45_000);
+  // Auto-sync every 30s with countdown display
+  state.syncCountdown = 30;
+  clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
+
+  state.refreshTimer = setInterval(() => {
+    state.syncCountdown = 30;
+    refreshAttendance();
+  }, 30_000);
+
+  state.countdownTimer = setInterval(() => {
+    state.syncCountdown = Math.max(0, state.syncCountdown - 1);
+    updateLastRefresh();
+  }, 1_000);
 }
 
 function stopTracking() {
   state.tracking = false;
   clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
   setStatus('idle', 'Tracking stopped');
 }
 
@@ -725,8 +741,12 @@ function setStatus(type, text) {
 }
 
 function updateLastRefresh() {
-  document.getElementById('last-refresh').textContent =
-    'updated ' + fmtTime(new Date());
+  const tracking = state.tracking;
+  const countdown = state.syncCountdown ?? 30;
+  const timeStr = fmtTime(new Date());
+  document.getElementById('last-refresh').textContent = tracking
+    ? `updated ${timeStr} · next in ${countdown}s`
+    : `updated ${timeStr}`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
