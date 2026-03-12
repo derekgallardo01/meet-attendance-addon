@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance Tracker · Meet Add-on</title>
 
-  <!-- Meet Add-ons SDK - official gstatic URL -->
-  <script src="https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js"></script>
+  <!-- Meet Add-ons SDK via ES module -->
+  <script type="module">
+    import { meet } from 'https://esm.sh/@googleworkspace/meet-addons@1.2.0/meet.addons';
+    window.meet = meet;
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
@@ -425,10 +428,19 @@ const state = {
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
 ═══════════════════════════════════════════════════════════════ */
+async function waitForMeet(retries = 30, delay = 200) {
+  for (let i = 0; i < retries; i++) {
+    if (window.meet?.addon?.createAddonSession) return true;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  return false;
+}
+
 async function initSDK() {
   try {
-    // createAddonSession() MUST be called as soon as content is ready —
-    // this is what tells Meet to dismiss the loading spinner.
+    const ready = await waitForMeet();
+    if (!ready) throw new Error('window.meet not available');
+
     const session = await window.meet.addon.createAddonSession({
       cloudProjectNumber: '415551639811',
     });
