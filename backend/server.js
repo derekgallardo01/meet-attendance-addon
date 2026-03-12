@@ -13,9 +13,7 @@ app.use(cors({
   ],
 }));
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-// Uses Application Default Credentials on Cloud Run (no key file needed).
-// Locally: set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON.
+// ── Auth ──────────────────────────────────────────────────────────────────────
 async function getAuthClient() {
   const auth = new google.auth.GoogleAuth({
     scopes: [
@@ -27,8 +25,6 @@ async function getAuthClient() {
 }
 
 // ── GET /api/attendance ───────────────────────────────────────────────────────
-// Returns participants + sessions for a given conferenceId.
-// Meet stores conferenceRecords keyed by conference ID.
 app.get('/api/attendance', async (req, res) => {
   const { conferenceId } = req.query;
 
@@ -40,29 +36,53 @@ app.get('/api/attendance', async (req, res) => {
     const authClient = await getAuthClient();
     const meet = google.meet({ version: 'v2', auth: authClient });
 
-    // 1. Find the conferenceRecord matching this conferenceId
-    const recordsResp = await meet.conferenceRecords.list({
-      filter: `space.meeting_code="${conferenceId}"`,
-    });
+    // Try meeting_code filter first (e.g. "abc-defg-hij")
+    let records = [];
 
-    const records = recordsResp.data.conferenceRecords || [];
+    try {
+      const r = await meet.conferenceRecords.list({
+        filter: `space.meeting_code="${conferenceId}"`,
+      });
+      records = r.data.conferenceRecords || [];
+      console.log(`meeting_code filter returned ${records.length} records`);
+    } catch (e) {
+      console.warn('meeting_code filter failed:', e.message);
+    }
+
+    // Fallback: try as space name (meetingId format)
     if (records.length === 0) {
-      // Meeting hasn't ended or conference record not available yet
-      return res.json({ participants: [], message: 'No conference record found yet' });
+      try {
+        const r = await meet.conferenceRecords.list({
+          filter: `space.name="spaces/${conferenceId}"`,
+        });
+        records = r.data.conferenceRecords || [];
+        console.log(`space.name filter returned ${records.length} records`);
+      } catch (e) {
+        console.warn('space.name filter failed:', e.message);
+      }
+    }
+
+    if (records.length === 0) {
+      return res.json({
+        participants: [],
+        message: 'No conference record yet — meeting may still be starting, try refreshing in 30s',
+      });
     }
 
     // Use the most recent record
     const conferenceRecord = records[records.length - 1];
-    const conferenceName = conferenceRecord.name; // e.g. conferenceRecords/abc123
+    const conferenceName = conferenceRecord.name;
+    console.log('Using conference record:', conferenceName);
 
-    // 2. List participants
+    // List participants
     const participantsResp = await meet.conferenceRecords.participants.list({
       parent: conferenceName,
     });
 
     const rawParticipants = participantsResp.data.participants || [];
+    console.log(`Found ${rawParticipants.length} participants`);
 
-    // 3. For each participant, get their sessions
+    // For each participant, get their sessions
     const participants = await Promise.all(
       rawParticipants.map(async (p) => {
         const sessionsResp = await meet.conferenceRecords.participants.participantSessions.list({
@@ -71,27 +91,12 @@ app.get('/api/attendance', async (req, res) => {
 
         const sessions = sessionsResp.data.participantSessions || [];
 
-        // Determine earliest join and latest leave across all sessions
-        const joinTimes = sessions
-          .map(s => s.startTime)
-          .filter(Boolean)
-          .map(t => new Date(t));
+        const joinTimes = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
+        const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
 
-        const leaveTimes = sessions
-          .map(s => s.endTime)
-          .filter(Boolean)
-          .map(t => new Date(t));
-
-        const joinTime = joinTimes.length > 0
-          ? new Date(Math.min(...joinTimes)).toISOString()
-          : null;
-
-        const leaveTime = leaveTimes.length > 0
-          ? new Date(Math.max(...leaveTimes)).toISOString()
-          : null;
-
-        // Still present if any session has no endTime
-        const present = sessions.some(s => !s.endTime);
+        const joinTime  = joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null;
+        const leaveTime = leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null;
+        const present   = sessions.some(s => !s.endTime);
 
         return {
           displayName: p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
@@ -112,12 +117,9 @@ app.get('/api/attendance', async (req, res) => {
 });
 
 // ── POST /api/save-to-sheets ──────────────────────────────────────────────────
-// Saves attendance data to a Google Sheet.
-// Creates a new sheet tab named after the meeting + timestamp.
 app.post('/api/save-to-sheets', async (req, res) => {
   const { meetingTitle, conferenceId, exportedAt, participants } = req.body;
 
-  // SHEET_ID env var — set this to your Google Sheet ID
   const sheetId = process.env.SHEET_ID;
   if (!sheetId) {
     return res.status(500).json({ error: 'SHEET_ID environment variable not set' });
@@ -127,21 +129,15 @@ app.post('/api/save-to-sheets', async (req, res) => {
     const authClient = await getAuthClient();
     const sheets = google.sheets({ version: 'v4', auth: authClient });
 
-    // Create a new tab named after the meeting
     const tabName = `${meetingTitle || 'Meeting'} ${new Date(exportedAt).toLocaleDateString()}`.slice(0, 100);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: {
-        requests: [{
-          addSheet: {
-            properties: { title: tabName },
-          },
-        }],
+        requests: [{ addSheet: { properties: { title: tabName } } }],
       },
     });
 
-    // Build rows: header + one row per participant
     const header = ['Name', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
     const rows = participants.map(p => {
       const dur = p.joinTime
@@ -164,8 +160,7 @@ app.post('/api/save-to-sheets', async (req, res) => {
       requestBody: { values: [header, ...rows] },
     });
 
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-    res.json({ success: true, sheetUrl });
+    res.json({ success: true, sheetUrl: `https://docs.google.com/spreadsheets/d/${sheetId}` });
 
   } catch (err) {
     console.error('Error saving to Sheets:', err.message);
