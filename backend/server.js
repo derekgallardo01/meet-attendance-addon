@@ -20,7 +20,10 @@ async function getAuthClient() {
       'https://www.googleapis.com/auth/spreadsheets',
     ],
   });
-  return auth.getClient();
+  const client = await auth.getClient();
+  // Impersonate admin user so Meet API accepts the request (required for domain-wide delegation)
+  client.subject = process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com';
+  return client;
 }
 
 // ── GET /api/attendance ───────────────────────────────────────────────────────
