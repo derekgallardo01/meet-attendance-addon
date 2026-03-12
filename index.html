@@ -5,8 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance Tracker · Meet Add-on</title>
 
-  <!-- Meet injects window.meet into the iframe automatically.
-       No SDK script tag needed — loading one externally can conflict. -->
+  <!-- Meet Add-ons SDK — load dynamically so we can detect failures -->
+  <script>
+    window._meetSdkReady = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js';
+      s.onload = () => {
+        console.log('[Attendance] SDK script loaded, window.meet =', typeof window.meet);
+        resolve(true);
+      };
+      s.onerror = () => {
+        console.warn('[Attendance] SDK script failed to load — demo mode');
+        resolve(false);
+      };
+      document.head.appendChild(s);
+    });
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
@@ -425,10 +439,13 @@ const state = {
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
 ═══════════════════════════════════════════════════════════════ */
-async function waitForMeet(retries = 40, delay = 250) {
-  for (let i = 0; i < retries; i++) {
+async function waitForMeet() {
+  const loaded = await window._meetSdkReady;
+  if (!loaded) return false;
+  // Give window.meet a moment to be set after script runs
+  for (let i = 0; i < 10; i++) {
     if (window.meet?.addon?.createAddonSession) return true;
-    await new Promise(r => setTimeout(r, delay));
+    await new Promise(r => setTimeout(r, 100));
   }
   return false;
 }
