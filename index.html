@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance Tracker · Meet Add-on</title>
 
-  <!-- Meet Add-ons SDK via ES module -->
-  <script type="module">
-    import { meet } from 'https://esm.sh/@googleworkspace/meet-addons@1.2.0/meet.addons';
-    window.meet = meet;
-  </script>
+  <!-- Meet injects window.meet into the iframe automatically.
+       No SDK script tag needed — loading one externally can conflict. -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
@@ -428,7 +425,7 @@ const state = {
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
 ═══════════════════════════════════════════════════════════════ */
-async function waitForMeet(retries = 30, delay = 200) {
+async function waitForMeet(retries = 40, delay = 250) {
   for (let i = 0; i < retries; i++) {
     if (window.meet?.addon?.createAddonSession) return true;
     await new Promise(r => setTimeout(r, delay));
@@ -437,9 +434,17 @@ async function waitForMeet(retries = 30, delay = 200) {
 }
 
 async function initSDK() {
+  console.log('[Attendance] initSDK starting, window.meet =', typeof window.meet);
   try {
     const ready = await waitForMeet();
-    if (!ready) throw new Error('window.meet not available');
+    console.log('[Attendance] waitForMeet result:', ready, 'window.meet =', typeof window.meet);
+
+    if (!ready) {
+      // Not inside Meet — show demo data
+      document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+      setStatus('loading', 'Demo mode — open inside Meet to connect');
+      return;
+    }
 
     const session = await window.meet.addon.createAddonSession({
       cloudProjectNumber: '415551639811',
@@ -459,10 +464,9 @@ async function initSDK() {
     setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
 
   } catch (err) {
-    console.warn('SDK init:', err.message);
-    // Running outside Meet — fall back to demo data
+    console.error('[Attendance] SDK error:', err.message);
     document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
-    setStatus('loading', 'Running outside Meet — showing demo data');
+    setStatus('loading', 'SDK error — see console');
   }
 }
 
