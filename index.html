@@ -425,11 +425,18 @@ const state = {
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
 ═══════════════════════════════════════════════════════════════ */
+async function waitForSDK(retries = 20, delay = 300) {
+  for (let i = 0; i < retries; i++) {
+    if (typeof meet !== 'undefined' && meet?.addon?.createAddonSession) return true;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  return false;
+}
+
 async function initSDK() {
   try {
-    // The SDK is available globally after the script tag loads.
-    // meet.addon.createAddonSession() is the current entry point.
-    if (typeof meet === 'undefined') {
+    const ready = await waitForSDK();
+    if (!ready) {
       throw new Error('Meet SDK not available (not running inside Meet)');
     }
 
