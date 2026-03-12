@@ -478,20 +478,15 @@ async function initSDK() {
     // Create the side panel client — required for side panel add-ons
     const sidePanelClient = await session.createSidePanelClient();
 
-    // Get meeting info — meetingSpaceInfo contains the meeting code
+    // Get meeting info — MeetingInfo has meetingId and meetingCode
     const meetingInfo = await sidePanelClient.getMeetingInfo();
+    console.log('[Attendance] meetingInfo keys:', Object.keys(meetingInfo));
     console.log('[Attendance] meetingInfo:', JSON.stringify(meetingInfo));
 
-    // Try all possible fields where conference ID might live
-    state.conferenceId = meetingInfo.meetingUrl?.split('/')?.pop()
-      || meetingInfo.conferenceId
-      || meetingInfo.meetingCode
-      || meetingInfo.spaceId
-      || null;
-
-    state.meetingTitle = meetingInfo.meetingTitle
-      || meetingInfo.title
-      || 'Google Meet';
+    // meetingCode is the meeting code e.g. "abc-defg-hij"
+    // meetingId is the globally unique ID used by the REST API
+    state.conferenceId = meetingInfo.meetingCode || meetingInfo.meetingId || null;
+    state.meetingTitle = meetingInfo.meetingTitle || meetingInfo.title || 'Google Meet';
 
     document.getElementById('meeting-title').textContent = state.meetingTitle;
     setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
