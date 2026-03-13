@@ -425,6 +425,18 @@
       margin-bottom: 8px;
     }
     .unmatched-section { margin-top: 16px; }
+    .match-override {
+      background: #0d1117;
+      border: 1px dashed #444c56;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: #e6edf3;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .match-override::placeholder { color: #484f58; }
+    .match-override:focus { outline: none; border-color: #58a6ff; }
     .unmatched-attendee {
       font-size: 11px;
       color: #8b949e;
@@ -802,12 +814,21 @@ function openMatchModal(attendees) {
         <div class="sub">${p.present ? 'Present' : 'Left'}</div>
       </div>
       <div class="match-arrow">→</div>
-      <select class="match-select" data-participant="${p.displayName}">
-        <option value="">— No match —</option>
-        ${attendees.map(a =>
-          `<option value="${a.email}" ${a.email === autoEmail ? 'selected' : ''}>${a.displayName} (${a.email})</option>`
-        ).join('')}
-      </select>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+        <select class="match-select" data-participant="${p.displayName}" onchange="handleMatchSelectChange(this)">
+          <option value="">— No match —</option>
+          ${attendees.map(a =>
+            `<option value="${a.email}" ${a.email === autoEmail ? 'selected' : ''}>${a.displayName} (${a.email})</option>`
+          ).join('')}
+        </select>
+        <input
+          class="match-override"
+          type="email"
+          placeholder="Or type email manually…"
+          data-participant="${p.displayName}"
+          style="display:${autoEmail ? 'none' : 'block'}"
+        />
+      </div>
     `;
     rowsEl.appendChild(row);
   }
@@ -832,11 +853,29 @@ function closeMatchModal() {
   document.getElementById('match-modal').classList.remove('open');
 }
 
+function handleMatchSelectChange(sel) {
+  // If a dropdown match is selected, hide the manual override; if cleared, show it
+  const wrapper = sel.closest('div');
+  const override = wrapper.querySelector('.match-override');
+  if (override) {
+    override.style.display = sel.value ? 'none' : 'block';
+    if (sel.value) override.value = '';
+  }
+}
+
 async function confirmMatchAndExport() {
-  // Build email map from dropdowns
+  // Build email map — override input takes priority if dropdown is "No match"
   const emailMap = {};
   document.querySelectorAll('.match-select').forEach(sel => {
-    if (sel.value) emailMap[sel.dataset.participant] = sel.value;
+    const participant = sel.dataset.participant;
+    const wrapper = sel.closest('div');
+    const override = wrapper ? wrapper.querySelector('.match-override') : null;
+    const overrideVal = override ? override.value.trim() : '';
+    if (overrideVal) {
+      emailMap[participant] = overrideVal;
+    } else if (sel.value) {
+      emailMap[participant] = sel.value;
+    }
   });
   closeMatchModal();
   await doExportToSheets(emailMap);
