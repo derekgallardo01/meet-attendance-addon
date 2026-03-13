@@ -755,6 +755,13 @@ function updateSummary() {
 async function saveToSheets() {
   if (!state.participants.size) { toast('No data yet'); return; }
 
+  // Warn if meeting is still active (participants still present)
+  const anyPresent = [...state.participants.values()].some(p => p.present);
+  if (anyPresent) {
+    const confirmed = window.confirm('The meeting is still active — some participants are marked Present. Export now anyway?');
+    if (!confirmed) return;
+  }
+
   toast('Checking Calendar…');
   try {
     const calRes = await fetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
@@ -914,6 +921,9 @@ async function doExportToSheets(emailMap) {
     if (!res.ok) throw new Error(`${res.status}`);
     const { sheetUrl } = await res.json();
     toast('✓ Saved to Sheets');
+    const btn = document.getElementById('btn-sheets');
+    btn.textContent = '✓ Exported';
+    btn.disabled = true;
     if (sheetUrl) window.open(sheetUrl, '_blank');
   } catch (err) {
     toast(`⚠ Sheets error: ${err.message}`);
