@@ -596,12 +596,13 @@ function mergeParticipants(incoming = []) {
     const key = p.displayName;
     if (!state.participants.has(key)) {
       state.participants.set(key, {
-        displayName: p.displayName,
-        email:       p.email || '',
-        joinTime:    p.joinTime ? new Date(p.joinTime) : new Date(),
-        leaveTime:   p.leaveTime ? new Date(p.leaveTime) : null,
-        present:     p.present ?? true,
-        sessions:    1,
+        displayName:    p.displayName,
+        email:          p.email || '',
+        joinTime:       p.joinTime ? new Date(p.joinTime) : null,
+        trackedJoinTime: new Date(), // always record when we first saw them
+        leaveTime:      p.leaveTime ? new Date(p.leaveTime) : null,
+        present:        p.present ?? true,
+        sessions:       1,
       });
     } else {
       const existing = state.participants.get(key);
@@ -666,20 +667,29 @@ function updateSummary() {
 async function saveToSheets() {
   if (!state.participants.size) { toast('No data yet'); return; }
 
+  const now = new Date();
+  const tabName = `${state.meetingTitle || 'Google Meet'} ${now.toLocaleDateString('en-US')} ${now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
   const payload = {
     meetingTitle: state.meetingTitle,
+    tabName,
     conferenceId: state.conferenceId,
-    exportedAt:   new Date().toISOString(),
-    participants: [...state.participants.values()].map(p => ({
-      displayName:    p.displayName,
-      email:          p.email || '',
-      joinTimeISO:    p.joinTime  ? p.joinTime.toISOString()  : null,
-      leaveTimeISO:   p.leaveTime ? p.leaveTime.toISOString() : null,
-      joinTimeLocal:  p.joinTime  ? p.joinTime.toLocaleString('en-US', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true})  : '',
-      leaveTimeLocal: p.leaveTime ? p.leaveTime.toLocaleString('en-US', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true}) : '',
-      present:        p.present,
-      sessions:       p.sessions,
-    })),
+    exportedAt:   now.toISOString(),
+    participants: [...state.participants.values()].map(p => {
+      // Fallback to tracked join time or now if API hasn't returned times yet (live meeting)
+      const joinTime  = p.joinTime  || p.trackedJoinTime || new Date();
+      const leaveTime = p.leaveTime || null;
+      const fmt = (d) => d ? d.toLocaleString('en-US', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true}) : '';
+      return {
+        displayName:    p.displayName,
+        email:          p.email || '',
+        joinTimeISO:    joinTime.toISOString(),
+        leaveTimeISO:   leaveTime ? leaveTime.toISOString() : null,
+        joinTimeLocal:  fmt(joinTime),
+        leaveTimeLocal: fmt(leaveTime),
+        present:        p.present,
+        sessions:       p.sessions,
+      };
+    }),
   };
 
   try {

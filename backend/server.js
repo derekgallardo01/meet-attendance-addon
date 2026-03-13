@@ -134,7 +134,7 @@ app.get('/api/attendance', async (req, res) => {
 
 // ── POST /api/save-to-sheets ──────────────────────────────────────────────────
 app.post('/api/save-to-sheets', async (req, res) => {
-  const { meetingTitle, exportedAt, participants } = req.body;
+  const { meetingTitle, tabName: clientTabName, exportedAt, participants } = req.body;
   const sheetId = process.env.SHEET_ID;
   if (!sheetId) return res.status(500).json({ error: 'SHEET_ID env var not set' });
 
@@ -150,9 +150,8 @@ app.post('/api/save-to-sheets', async (req, res) => {
 
     await sheetsAuth.authorize();
     const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
-    const d = new Date(exportedAt);
-    // Include seconds to guarantee uniqueness on repeated exports
-    const tabName = `${meetingTitle || 'Meeting'} ${d.toLocaleDateString('en-US')} ${d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'})}`.slice(0, 100);
+    // Use pre-formatted tab name from client (already in local timezone)
+    const tabName = (clientTabName || `${meetingTitle || 'Meeting'} ${new Date(exportedAt).toISOString()}`).slice(0, 100);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
