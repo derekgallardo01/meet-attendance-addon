@@ -567,11 +567,19 @@ async function refreshAttendance() {
       data = demoParticipants();
     }
 
+    const hadParticipantsBefore = state.participants.size > 0;
     mergeParticipants(data.participants);
     renderList();
     updateSummary();
     updateLastRefresh();
     setStatus('active', `Tracking · ${state.participants.size} seen`);
+
+    // Auto-export to Sheets the first time participants appear (meeting just ended)
+    if (!hadParticipantsBefore && state.participants.size > 0 && !state.autoExported) {
+      state.autoExported = true;
+      toast('Meeting ended — auto-saving to Sheets…');
+      setTimeout(saveToSheets, 1500);
+    }
 
   } catch (err) {
     console.error(err);
@@ -675,16 +683,16 @@ function exportCSV() {
     ]);
   }
 
-  const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'), {
-    href: url,
-    download: `attendance_${datestamp()}.csv`,
-  });
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('✓ CSV downloaded');
+  const csv     = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}`).join(',')).join('\n');
+  const encoded = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  // window.open works inside Meet iframe; anchor click does not
+  const win = window.open(encoded, '_blank');
+  if (!win) {
+    // Fallback: copy to clipboard
+    navigator.clipboard.writeText(csv).then(() => toast('✓ CSV copied to clipboard'));
+  } else {
+    toast('✓ CSV opened — save with Ctrl+S');
+  }
 }
 
 async function saveToSheets() {
