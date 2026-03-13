@@ -650,15 +650,7 @@ async function refreshAttendance() {
     updateLastRefresh();
     setStatus('active', `Tracking · ${state.participants.size} seen`);
 
-    // Auto-export to Sheets only when meeting has ended
-    // Detect end: we have participants AND all of them have a leaveTime (no one is present)
-    const allLeft = state.participants.size > 0 &&
-      [...state.participants.values()].every(p => !p.present && p.leaveTime);
-    if (allLeft && !state.autoExported) {
-      state.autoExported = true;
-      toast('Meeting ended — auto-saving to Sheets…');
-      setTimeout(saveToSheets, 1500);
-    }
+    // Auto-export removed — use the Sheet button manually
 
   } catch (err) {
     console.error(err);
