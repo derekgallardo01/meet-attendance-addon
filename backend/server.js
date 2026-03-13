@@ -29,6 +29,8 @@ app.use(cors({
 
 async function getAuthClient() {
   const key = await loadServiceAccountKey();
+  console.log('[Auth] Using service account:', key.client_email);
+  console.log('[Auth] Impersonating:', process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com');
   // JWT with subject enables domain-wide delegation to impersonate admin user
   const client = new google.auth.JWT({
     email: key.client_email,
@@ -39,7 +41,13 @@ async function getAuthClient() {
     ],
     subject: process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com',
   });
-  await client.authorize();
+  try {
+    const tokens = await client.authorize();
+    console.log('[Auth] JWT authorized successfully, token type:', tokens.token_type);
+  } catch (authErr) {
+    console.error('[Auth] JWT authorize FAILED:', authErr.message);
+    throw authErr;
+  }
   return client;
 }
 
