@@ -115,6 +115,7 @@ app.get('/api/attendance', async (req, res) => {
 
         return {
           displayName: p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
+          email:     p.user?.email || p.signedinUser?.email || '',
           joinTime:  joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
           leaveTime: leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
           present:   sessions.some(s => !s.endTime),
@@ -147,23 +148,33 @@ app.post('/api/save-to-sheets', async (req, res) => {
       subject,
     });
 
+    await sheetsAuth.authorize();
     const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
-    const tabName = `${meetingTitle || 'Meeting'} ${new Date(exportedAt).toLocaleDateString()}`.slice(0, 100);
+    const d = new Date(exportedAt);
+    const tabName = `${meetingTitle || 'Meeting'} ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`.slice(0, 100);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: { requests: [{ addSheet: { properties: { title: tabName } } }] },
     });
 
-    const header = ['Name', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
+    const header = ['Name', 'Email', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
+    // Use timezone offset sent from client, fallback to UTC
+    const tzOffset = req.body.tzOffset || 0; // minutes behind UTC
+    const toLocal = (iso) => {
+      if (!iso) return '';
+      const d = new Date(new Date(iso).getTime() - tzOffset * 60000);
+      return d.toISOString().replace('T', ' ').substring(0, 16);
+    };
     const rows = participants.map(p => {
       const dur = p.joinTime
         ? Math.round((new Date(p.leaveTime || exportedAt) - new Date(p.joinTime)) / 60000)
         : '';
       return [
         p.displayName,
-        p.joinTime  ? new Date(p.joinTime).toLocaleString()  : '',
-        p.leaveTime ? new Date(p.leaveTime).toLocaleString() : '',
+        p.email || '',
+        toLocal(p.joinTime),
+        toLocal(p.leaveTime),
         dur, p.sessions,
         p.present ? 'Present' : 'Left',
       ];
