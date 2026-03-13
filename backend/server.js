@@ -219,8 +219,7 @@ app.get('/api/calendar-attendees', async (req, res) => {
       timeMin,
       timeMax,
       singleEvents: true,
-      maxResults: 100,
-      q: meetingCode, // search for the meeting code in event text
+      maxResults: 250,
     });
 
     const events = eventsResp.data.items || [];
