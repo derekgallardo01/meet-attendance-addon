@@ -151,7 +151,8 @@ app.post('/api/save-to-sheets', async (req, res) => {
     await sheetsAuth.authorize();
     const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
     const d = new Date(exportedAt);
-    const tabName = `${meetingTitle || 'Meeting'} ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`.slice(0, 100);
+    // Include seconds to guarantee uniqueness on repeated exports
+    const tabName = `${meetingTitle || 'Meeting'} ${d.toLocaleDateString('en-US')} ${d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'})}`.slice(0, 100);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
@@ -159,22 +160,15 @@ app.post('/api/save-to-sheets', async (req, res) => {
     });
 
     const header = ['Name', 'Email', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
-    // Use timezone offset sent from client, fallback to UTC
-    const tzOffset = req.body.tzOffset || 0; // minutes behind UTC
-    const toLocal = (iso) => {
-      if (!iso) return '';
-      const d = new Date(new Date(iso).getTime() - tzOffset * 60000);
-      return d.toISOString().replace('T', ' ').substring(0, 16);
-    };
     const rows = participants.map(p => {
-      const dur = p.joinTime
-        ? Math.round((new Date(p.leaveTime || exportedAt) - new Date(p.joinTime)) / 60000)
+      const dur = p.joinTimeISO
+        ? Math.round((new Date(p.leaveTimeISO || exportedAt) - new Date(p.joinTimeISO)) / 60000)
         : '';
       return [
         p.displayName,
         p.email || '',
-        toLocal(p.joinTime),
-        toLocal(p.leaveTime),
+        p.joinTimeLocal  || '',
+        p.leaveTimeLocal || '',
         dur, p.sessions,
         p.present ? 'Present' : 'Left',
       ];

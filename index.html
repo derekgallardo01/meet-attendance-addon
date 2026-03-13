@@ -670,14 +670,15 @@ async function saveToSheets() {
     meetingTitle: state.meetingTitle,
     conferenceId: state.conferenceId,
     exportedAt:   new Date().toISOString(),
-    tzOffset:     new Date().getTimezoneOffset(), // minutes behind UTC
     participants: [...state.participants.values()].map(p => ({
-      displayName: p.displayName,
-      email:       p.email || '',
-      joinTime:    p.joinTime  ? isoFmt(p.joinTime)  : null,
-      leaveTime:   p.leaveTime ? isoFmt(p.leaveTime) : null,
-      present:     p.present,
-      sessions:    p.sessions,
+      displayName:    p.displayName,
+      email:          p.email || '',
+      joinTimeISO:    p.joinTime  ? p.joinTime.toISOString()  : null,
+      leaveTimeISO:   p.leaveTime ? p.leaveTime.toISOString() : null,
+      joinTimeLocal:  p.joinTime  ? p.joinTime.toLocaleString('en-US', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true})  : '',
+      leaveTimeLocal: p.leaveTime ? p.leaveTime.toLocaleString('en-US', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true}) : '',
+      present:        p.present,
+      sessions:       p.sessions,
     })),
   };
 
