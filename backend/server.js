@@ -2,6 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
 const { meet: meetLib } = require('@googleapis/meet');
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+
+// Load service account key from Secret Manager at startup
+let serviceAccountKey = null;
+async function loadServiceAccountKey() {
+  if (serviceAccountKey) return serviceAccountKey;
+  const client = new SecretManagerServiceClient();
+  const [version] = await client.accessSecretVersion({
+    name: 'projects/415551639811/secrets/meet-sa-key/versions/latest',
+  });
+  serviceAccountKey = JSON.parse(version.payload.data.toString());
+  console.log('Service account key loaded from Secret Manager');
+  return serviceAccountKey;
+}
 
 const app = express();
 app.use(express.json());
@@ -14,15 +28,17 @@ app.use(cors({
 }));
 
 async function getAuthClient() {
-  const auth = new google.auth.GoogleAuth({
+  const key = await loadServiceAccountKey();
+  // JWT with subject enables domain-wide delegation to impersonate admin user
+  const client = new google.auth.JWT({
+    email: key.client_email,
+    key: key.private_key,
     scopes: [
       'https://www.googleapis.com/auth/meetings.space.readonly',
       'https://www.googleapis.com/auth/spreadsheets',
     ],
+    subject: process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com',
   });
-  const client = await auth.getClient();
-  // Impersonate admin user so Meet API accepts the request (required for domain-wide delegation)
-  client.subject = process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com';
   return client;
 }
 
