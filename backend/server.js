@@ -158,7 +158,8 @@ app.post('/api/save-to-sheets', async (req, res) => {
       requestBody: { requests: [{ addSheet: { properties: { title: tabName } } }] },
     });
 
-    const header = ['Name', 'Email', 'Join Time', 'Leave Time', 'Duration (min)', 'Sessions', 'Status'];
+    const header = ['Name', 'Email', 'Join Time (UTC)', 'Leave Time (UTC)', 'Duration (min)', 'Sessions', 'Status'];
+    const fmtUTC = (iso) => iso ? iso.replace('T', ' ').substring(0, 16) + ' UTC' : '';
     const rows = participants.map(p => {
       const dur = p.joinTimeISO
         ? Math.round((new Date(p.leaveTimeISO || exportedAt) - new Date(p.joinTimeISO)) / 60000)
@@ -166,8 +167,8 @@ app.post('/api/save-to-sheets', async (req, res) => {
       return [
         p.displayName,
         p.email || '',
-        p.joinTimeLocal  || '',
-        p.leaveTimeLocal || '',
+        fmtUTC(p.joinTimeISO),
+        fmtUTC(p.leaveTimeISO),
         dur, p.sessions,
         p.present ? 'Present' : 'Left',
       ];
