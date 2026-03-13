@@ -39,6 +39,7 @@ async function getAuthClient() {
     ],
     subject: process.env.IMPERSONATE_EMAIL || 'admin@theyachtgroup.com',
   });
+  await client.authorize();
   return client;
 }
 
