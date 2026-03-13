@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
-const { meet: meetLib } = require('@googleapis/meet');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 // Load service account key from Secret Manager at startup
@@ -58,7 +57,7 @@ app.get('/api/attendance', async (req, res) => {
 
   try {
     const authClient = await getAuthClient();
-    const meetClient = meetLib({ version: 'v2', auth: authClient });
+    const meetClient = google.meet({ version: 'v2', auth: authClient });
 
     let records = [];
 
