@@ -189,6 +189,77 @@ app.post('/api/save-to-sheets', async (req, res) => {
   }
 });
 
+
+// ── GET /api/calendar-attendees ───────────────────────────────────────────────
+// Searches Google Calendar for an event matching the meeting code
+// Returns attendee list with name + email
+app.get('/api/calendar-attendees', async (req, res) => {
+  const { meetingCode } = req.query;
+  if (!meetingCode) return res.status(400).json({ error: 'meetingCode is required' });
+
+  try {
+    const key = await loadServiceAccountKey();
+    const subject = process.env.IMPERSONATE_EMAIL || 'advertising@theyachtgroup.com';
+
+    const calAuth = new google.auth.JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+      subject,
+    });
+    await calAuth.authorize();
+    const calendar = google.calendar({ version: 'v3', auth: calAuth });
+
+    // Search events from 30 days ago to 7 days from now
+    const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const timeMax = new Date(Date.now() + 7  * 24 * 60 * 60 * 1000).toISOString();
+
+    const eventsResp = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      maxResults: 100,
+      q: meetingCode, // search for the meeting code in event text
+    });
+
+    const events = eventsResp.data.items || [];
+    console.log(`[Calendar] found ${events.length} events matching "${meetingCode}"`);
+
+    // Find event whose Meet link contains the meeting code
+    const matchedEvent = events.find(e => {
+      const meetLink = e.conferenceData?.entryPoints?.find(ep => ep.entryPointType === 'video')?.uri || '';
+      const hangoutLink = e.hangoutLink || '';
+      return meetLink.includes(meetingCode) || hangoutLink.includes(meetingCode);
+    });
+
+    if (!matchedEvent) {
+      console.log('[Calendar] No matching event found — instant meeting');
+      return res.json({ attendees: [], isScheduled: false });
+    }
+
+    console.log('[Calendar] Matched event:', matchedEvent.summary);
+
+    const attendees = (matchedEvent.attendees || [])
+      .filter(a => !a.resource) // exclude rooms/resources
+      .map(a => ({
+        email:       a.email,
+        displayName: a.displayName || a.email.split('@')[0],
+        status:      a.responseStatus, // accepted, declined, tentative, needsAction
+      }));
+
+    res.json({
+      isScheduled: true,
+      eventTitle:  matchedEvent.summary || 'Scheduled Meeting',
+      attendees,
+    });
+
+  } catch (err) {
+    console.error('[Calendar] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'meet-attendance-backend' }));
 
 const PORT = process.env.PORT || 8080;

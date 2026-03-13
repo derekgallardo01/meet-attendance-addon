@@ -350,6 +350,87 @@
       z-index: 100;
     }
     #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Matching Modal ─────────────────────────────────────── */
+    #match-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #match-modal.open { display: flex; flex-direction: column; }
+    .modal-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+    }
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 4px;
+    }
+    .modal-subtitle {
+      font-size: 11px;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+    .match-row {
+      display: grid;
+      grid-template-columns: 1fr 24px 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .match-participant {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e6edf3;
+    }
+    .match-participant .sub { font-size: 10px; color: #8b949e; margin-top: 2px; }
+    .match-arrow { text-align: center; color: #8b949e; font-size: 14px; }
+    .match-select {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e6edf3;
+      width: 100%;
+      cursor: pointer;
+    }
+    .match-select:focus { outline: none; border-color: #238636; }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+    .modal-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .unmatched-section { margin-top: 16px; }
+    .unmatched-attendee {
+      font-size: 11px;
+      color: #8b949e;
+      padding: 4px 0;
+      border-bottom: 1px solid #21262d;
+    }
   </style>
 </head>
 <body>
@@ -667,8 +748,109 @@ function updateSummary() {
 async function saveToSheets() {
   if (!state.participants.size) { toast('No data yet'); return; }
 
+  toast('Checking Calendar…');
+  try {
+    const calRes = await fetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
+    const calData = calRes.ok ? await calRes.json() : { isScheduled: false, attendees: [] };
+
+    if (calData.isScheduled && calData.attendees.length > 0) {
+      // Scheduled meeting — show matching UI
+      openMatchModal(calData.attendees);
+    } else {
+      // Instant meeting — export directly
+      await doExportToSheets({});
+    }
+  } catch (err) {
+    console.warn('Calendar check failed, exporting directly:', err.message);
+    await doExportToSheets({});
+  }
+}
+
+function openMatchModal(attendees) {
+  state.calendarAttendees = attendees;
+
+  // Auto-match: exact name, or first name match
+  const emailMap = {}; // displayName -> email
+  const usedEmails = new Set();
+
+  for (const p of state.participants.values()) {
+    const pName = p.displayName.toLowerCase().trim();
+    // Try exact match
+    let match = attendees.find(a => a.displayName.toLowerCase().trim() === pName);
+    // Try first name match
+    if (!match) {
+      const pFirst = pName.split(' ')[0];
+      match = attendees.find(a => a.displayName.toLowerCase().split(' ')[0] === pFirst && !usedEmails.has(a.email));
+    }
+    if (match) {
+      emailMap[p.displayName] = match.email;
+      usedEmails.add(match.email);
+    }
+  }
+  state.autoEmailMap = emailMap;
+
+  // Build match rows
+  const rowsEl = document.getElementById('match-rows');
+  rowsEl.innerHTML = '';
+
+  const attendeeOptions = attendees.map(a =>
+    `<option value="${a.email}">${a.displayName} (${a.email})</option>`
+  ).join('');
+
+  for (const p of state.participants.values()) {
+    const autoEmail = emailMap[p.displayName] || '';
+    const row = document.createElement('div');
+    row.className = 'match-row';
+    row.innerHTML = `
+      <div class="match-participant">
+        <div>${p.displayName}</div>
+        <div class="sub">${p.present ? 'Present' : 'Left'}</div>
+      </div>
+      <div class="match-arrow">→</div>
+      <select class="match-select" data-participant="${p.displayName}">
+        <option value="">— No match —</option>
+        ${attendees.map(a =>
+          `<option value="${a.email}" ${a.email === autoEmail ? 'selected' : ''}>${a.displayName} (${a.email})</option>`
+        ).join('')}
+      </select>
+    `;
+    rowsEl.appendChild(row);
+  }
+
+  // Show unmatched attendees
+  const matchedEmails = new Set(Object.values(emailMap));
+  const unmatched = attendees.filter(a => !matchedEmails.has(a.email));
+  const unmatchedSection = document.getElementById('unmatched-section');
+  if (unmatched.length > 0) {
+    unmatchedSection.style.display = 'block';
+    document.getElementById('unmatched-list').innerHTML = unmatched.map(a =>
+      `<div class="unmatched-attendee">${a.displayName} — ${a.email}</div>`
+    ).join('');
+  } else {
+    unmatchedSection.style.display = 'none';
+  }
+
+  document.getElementById('match-modal').classList.add('open');
+}
+
+function closeMatchModal() {
+  document.getElementById('match-modal').classList.remove('open');
+}
+
+async function confirmMatchAndExport() {
+  // Build email map from dropdowns
+  const emailMap = {};
+  document.querySelectorAll('.match-select').forEach(sel => {
+    if (sel.value) emailMap[sel.dataset.participant] = sel.value;
+  });
+  closeMatchModal();
+  await doExportToSheets(emailMap);
+}
+
+async function doExportToSheets(emailMap) {
   const now = new Date();
   const tabName = `${state.meetingTitle || 'Google Meet'} ${now.toLocaleDateString('en-US')} ${now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
+
   const payload = {
     meetingTitle: state.meetingTitle,
     tabName,
@@ -679,7 +861,7 @@ async function saveToSheets() {
       const leaveTime = p.leaveTime || null;
       return {
         displayName:  p.displayName,
-        email:        p.email || '',
+        email:        emailMap[p.displayName] || p.email || '',
         joinTimeISO:  joinTime.toISOString(),
         leaveTimeISO: leaveTime ? leaveTime.toISOString() : null,
         present:      p.present,
@@ -690,7 +872,6 @@ async function saveToSheets() {
 
   try {
     toast('Saving to Sheets…');
-    // Your backend writes to a Google Sheet via the Sheets API
     const res = await fetch(`${state.backendUrl}/save-to-sheets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -791,5 +972,23 @@ window.addEventListener('DOMContentLoaded', () => {
   initSDK();
 });
 </script>
+
+  <!-- ── Matching Modal ── -->
+  <div id="match-modal">
+    <div class="modal-box">
+      <div class="modal-title">Match Participants to Invitees</div>
+      <div class="modal-subtitle">Auto-matched where possible. Manually assign emails for the rest.</div>
+      <div class="modal-section-label">Meet Participants → Calendar Invitee</div>
+      <div id="match-rows"></div>
+      <div class="unmatched-section" id="unmatched-section" style="display:none">
+        <div class="modal-section-label">Calendar invitees not matched</div>
+        <div id="unmatched-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeMatchModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmMatchAndExport()">✓ Confirm & Export to Sheets</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
