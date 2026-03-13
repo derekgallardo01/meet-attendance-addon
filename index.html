@@ -755,12 +755,9 @@ function updateSummary() {
 async function saveToSheets() {
   if (!state.participants.size) { toast('No data yet'); return; }
 
-  // Warn if meeting is still active (participants still present)
+  // Note if meeting is still active — export anyway, just warn
   const anyPresent = [...state.participants.values()].some(p => p.present);
-  if (anyPresent) {
-    const confirmed = window.confirm('The meeting is still active — some participants are marked Present. Export now anyway?');
-    if (!confirmed) return;
-  }
+  if (anyPresent) toast('⚠ Meeting still active — exporting current data…');
 
   toast('Checking Calendar…');
   try {
@@ -924,6 +921,7 @@ async function doExportToSheets(emailMap) {
     const btn = document.getElementById('btn-sheets');
     btn.textContent = '✓ Exported';
     btn.disabled = true;
+    setTimeout(() => { btn.textContent = '⬜ Sheet'; btn.disabled = false; }, 4000);
     if (sheetUrl) window.open(sheetUrl, '_blank');
   } catch (err) {
     toast(`⚠ Sheets error: ${err.message}`);
