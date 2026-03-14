@@ -65,8 +65,12 @@ router.post('/save-to-sheets', async (req, res) => {
       rsvpMap[a.email.toLowerCase()] = a.status;
     }
 
-    // Summary rows at top of sheet
-    const fmtDate = iso => iso ? new Date(iso).toUTCString().replace(' GMT', ' UTC') : '';
+    // Format helpers — display in US Eastern time
+    const fmtET = (iso) => {
+      if (!iso) return '';
+      return new Date(iso).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }) + ' ET';
+    };
+    const fmtDate = iso => iso ? fmtET(iso) : '';
     const totalInvited = calendarAttendees.length || participants.length;
     const totalAttended = participants.length;
     const attendanceRate = totalInvited > 0 ? Math.round((totalAttended / totalInvited) * 100) + '%' : 'N/A';
@@ -83,8 +87,7 @@ router.post('/save-to-sheets', async (req, res) => {
     ];
 
     // Build participant rows
-    const header = ['Name', 'Email', 'RSVP Status', 'Join Time (UTC)', 'Leave Time (UTC)', 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
-    const fmtUTC = iso => iso ? iso.replace('T', ' ').substring(0, 16) + ' UTC' : '';
+    const header = ['Name', 'Email', 'RSVP Status', 'Join Time (ET)', 'Leave Time (ET)', 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
 
     const attendedEmails = new Set();
     const rows = participants.map(p => {
@@ -96,7 +99,7 @@ router.post('/save-to-sheets', async (req, res) => {
       const pct = (dur !== '' && meetDurationMin > 0)
         ? Math.min(100, Math.round((dur / meetDurationMin) * 100)) + '%'
         : '';
-      return [p.displayName, p.email || '', fmtRsvp(rsvpMap[email]), fmtUTC(p.joinTimeISO), fmtUTC(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
+      return [p.displayName, p.email || '', fmtRsvp(rsvpMap[email]), fmtET(p.joinTimeISO), fmtET(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
     });
 
     // No-shows: calendar invitees who never joined
