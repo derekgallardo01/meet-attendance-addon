@@ -707,6 +707,17 @@ function mergeParticipants(incoming = []) {
       existing.sessions  = p.sessions || existing.sessions;
     }
   }
+
+  // Update meeting start time to earliest API join time (more accurate than local timer)
+  const allJoinTimes = [...state.participants.values()]
+    .map(p => p.joinTime)
+    .filter(Boolean);
+  if (allJoinTimes.length > 0) {
+    const earliest = new Date(Math.min(...allJoinTimes));
+    if (!state.startTime || earliest < state.startTime) {
+      state.startTime = earliest;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
