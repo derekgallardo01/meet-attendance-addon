@@ -527,6 +527,7 @@ const state = {
   startTime:     null,
   participants:  new Map(),   // displayName → { joinTime, leaveTime, present }
   refreshTimer:  null,
+  durationTimer: null,
   sdk:           null,
   backendUrl:    '/api',
 };
@@ -626,6 +627,7 @@ function stopTracking() {
   state.tracking = false;
   clearInterval(state.refreshTimer);
   clearInterval(state.countdownTimer);
+  clearInterval(state.durationTimer);
   setStatus('idle', 'Tracking stopped');
 }
 
@@ -774,8 +776,13 @@ function updateSummary() {
 ═══════════════════════════════════════════════════════════════ */
 
 
+let _exporting = false;
 async function saveToSheets() {
+  if (_exporting) return toast('Export already in progress…');
   if (!state.participants.size) { toast('No data yet'); return; }
+  _exporting = true;
+  const btn = document.getElementById('btn-sheets');
+  btn.disabled = true;
 
   // Note if meeting is still active — export anyway, just warn
   const anyPresent = [...state.participants.values()].some(p => p.present);
@@ -793,8 +800,15 @@ async function saveToSheets() {
     }
 
     if (calData.isScheduled && calData.attendees.length > 0) {
-      // Scheduled meeting — show matching UI
-      openMatchModal(calData.attendees);
+      // Auto-match first — skip modal if all participants matched
+      const { emailMap, unmatchedCount } = autoMatchAttendees(calData.attendees);
+      if (unmatchedCount === 0) {
+        state.calendarAttendees = calData.attendees;
+        toast('All participants auto-matched — exporting…');
+        await doExportToSheets(emailMap, calData.attendees);
+      } else {
+        openMatchModal(calData.attendees, emailMap);
+      }
     } else {
       // Instant meeting — export directly
       await doExportToSheets({}, []);
@@ -802,21 +816,22 @@ async function saveToSheets() {
   } catch (err) {
     console.warn('Calendar check failed, exporting directly:', err.message);
     await doExportToSheets({}, []);
+  } finally {
+    // Release lock unless modal is open (modal callbacks will release it)
+    if (!document.getElementById('match-modal').classList.contains('open')) {
+      _exporting = false;
+      btn.disabled = false;
+    }
   }
 }
 
-function openMatchModal(attendees) {
-  state.calendarAttendees = attendees;
-
-  // Auto-match: exact name, or first name match
+function autoMatchAttendees(attendees) {
   const emailMap = {}; // displayName -> email
   const usedEmails = new Set();
 
   for (const p of state.participants.values()) {
     const pName = p.displayName.toLowerCase().trim();
-    // Try exact match
     let match = attendees.find(a => a.displayName.toLowerCase().trim() === pName);
-    // Try first name match
     if (!match) {
       const pFirst = pName.split(' ')[0];
       match = attendees.find(a => a.displayName.toLowerCase().split(' ')[0] === pFirst && !usedEmails.has(a.email));
@@ -826,15 +841,19 @@ function openMatchModal(attendees) {
       usedEmails.add(match.email);
     }
   }
+
+  const unmatchedCount = state.participants.size - Object.keys(emailMap).length;
+  return { emailMap, unmatchedCount };
+}
+
+function openMatchModal(attendees, emailMap) {
+  state.calendarAttendees = attendees;
+  if (!emailMap) emailMap = autoMatchAttendees(attendees).emailMap;
   state.autoEmailMap = emailMap;
 
   // Build match rows
   const rowsEl = document.getElementById('match-rows');
   rowsEl.innerHTML = '';
-
-  const attendeeOptions = attendees.map(a =>
-    `<option value="${a.email}">${a.displayName} (${a.email})</option>`
-  ).join('');
 
   for (const p of state.participants.values()) {
     const autoEmail = emailMap[p.displayName] || '';
@@ -842,22 +861,22 @@ function openMatchModal(attendees) {
     row.className = 'match-row';
     row.innerHTML = `
       <div class="match-participant">
-        <div>${p.displayName}</div>
+        <div>${escHtml(p.displayName)}</div>
         <div class="sub">${p.present ? 'Present' : 'Left'}</div>
       </div>
       <div class="match-arrow">→</div>
       <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
-        <select class="match-select" data-participant="${p.displayName}" onchange="handleMatchSelectChange(this)">
+        <select class="match-select" data-participant="${escHtml(p.displayName)}" onchange="handleMatchSelectChange(this)">
           <option value="">— No match —</option>
           ${attendees.map(a =>
-            `<option value="${a.email}" ${a.email === autoEmail ? 'selected' : ''}>${a.displayName} (${a.email})</option>`
+            `<option value="${escHtml(a.email)}" ${a.email === autoEmail ? 'selected' : ''}>${escHtml(a.displayName)} (${escHtml(a.email)})</option>`
           ).join('')}
         </select>
         <input
           class="match-override"
           type="email"
           placeholder="Or type email manually…"
-          data-participant="${p.displayName}"
+          data-participant="${escHtml(p.displayName)}"
           style="display:${autoEmail ? 'none' : 'block'}"
         />
       </div>
@@ -872,17 +891,30 @@ function openMatchModal(attendees) {
   if (unmatched.length > 0) {
     unmatchedSection.style.display = 'block';
     document.getElementById('unmatched-list').innerHTML = unmatched.map(a =>
-      `<div class="unmatched-attendee">${a.displayName} — ${a.email}</div>`
+      `<div class="unmatched-attendee">${escHtml(a.displayName)} — ${escHtml(a.email)}</div>`
     ).join('');
   } else {
     unmatchedSection.style.display = 'none';
   }
 
+  clearInterval(state.refreshTimer); // Pause polling while modal is open
   document.getElementById('match-modal').classList.add('open');
 }
 
 function closeMatchModal() {
   document.getElementById('match-modal').classList.remove('open');
+  _exporting = false;
+  const btn = document.getElementById('btn-sheets');
+  if (btn) btn.disabled = false;
+  // Resume polling if still tracking
+  if (state.tracking) {
+    state.refreshTimer = setInterval(() => { refreshAttendance(); }, 30_000);
+  }
+}
+
+async function skipMatchAndExport() {
+  closeMatchModal();
+  await doExportToSheets({}, state.calendarAttendees || []);
 }
 
 function handleMatchSelectChange(sel) {
@@ -898,17 +930,21 @@ function handleMatchSelectChange(sel) {
 async function confirmMatchAndExport() {
   // Build email map — override input takes priority if dropdown is "No match"
   const emailMap = {};
-  document.querySelectorAll('.match-select').forEach(sel => {
+  for (const sel of document.querySelectorAll('.match-select')) {
     const participant = sel.dataset.participant;
     const wrapper = sel.closest('div');
     const override = wrapper ? wrapper.querySelector('.match-override') : null;
     const overrideVal = override ? override.value.trim() : '';
     if (overrideVal) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(overrideVal)) {
+        toast('Invalid email: ' + overrideVal);
+        return; // Stop export — user must fix the email
+      }
       emailMap[participant] = overrideVal;
     } else if (sel.value) {
       emailMap[participant] = sel.value;
     }
-  });
+  }
   closeMatchModal();
   await doExportToSheets(emailMap, state.calendarAttendees || []);
 }
@@ -962,7 +998,8 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
    DURATION TIMER
 ═══════════════════════════════════════════════════════════════ */
 function startDurationTimer() {
-  setInterval(() => {
+  if (state.durationTimer) clearInterval(state.durationTimer);
+  state.durationTimer = setInterval(() => {
     if (!state.startTime) return;
     document.getElementById('meeting-duration').textContent =
       fmtDur(state.startTime, new Date());
@@ -1058,6 +1095,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeMatchModal()">Cancel</button>
+        <button class="btn-secondary" onclick="skipMatchAndExport()">Skip matching</button>
         <button class="btn-primary" onclick="confirmMatchAndExport()">✓ Confirm & Export to Sheets</button>
       </div>
     </div>

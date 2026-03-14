@@ -7,6 +7,13 @@ const { persistExport } = require('../services/firestore');
 
 const router = Router();
 
+// Prevent formula injection — cells starting with =, +, -, @, tab, CR can execute formulas
+function sanitizeCell(val) {
+  if (typeof val !== 'string') return val;
+  if (/^[=+\-@\t\r]/.test(val)) return "'" + val;
+  return val;
+}
+
 // Google Sheets tab names cannot contain these characters
 function sanitizeTabName(name) {
   return name
@@ -90,22 +97,43 @@ router.post('/save-to-sheets', async (req, res) => {
     const header = ['Name', 'Email', 'RSVP Status', 'Join Time (ET)', 'Leave Time (ET)', 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
 
     const attendedEmails = new Set();
+    const attendedNames = new Set();
     const rows = participants.map(p => {
       const email = (p.email || '').toLowerCase();
       if (email) attendedEmails.add(email);
+      const name = (p.displayName || '').toLowerCase().trim();
+      if (name) attendedNames.add(name);
       const dur = p.joinTimeISO
         ? Math.round((new Date(p.leaveTimeISO || exportedAt) - new Date(p.joinTimeISO)) / 60000)
         : '';
       const pct = (dur !== '' && meetDurationMin > 0)
         ? Math.min(100, Math.round((dur / meetDurationMin) * 100)) + '%'
         : '';
-      return [p.displayName, p.email || '', fmtRsvp(rsvpMap[email]), fmtET(p.joinTimeISO), fmtET(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
+      return [sanitizeCell(p.displayName), sanitizeCell(p.email || ''), fmtRsvp(rsvpMap[email]), fmtET(p.joinTimeISO), fmtET(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
     });
 
-    // No-shows: calendar invitees who never joined
+    // Fix 2: Also capture emails from rows (includes manual overrides from frontend)
+    rows.forEach(row => {
+      const email = (row[1] || '').toLowerCase();
+      if (email) attendedEmails.add(email);
+    });
+
+    // No-shows: calendar invitees who never joined (check email AND name)
     const noShows = calendarAttendees
-      .filter(a => !attendedEmails.has(a.email.toLowerCase()))
-      .map(a => [a.displayName, a.email, fmtRsvp(a.status), '', '', '', '0%', 0, 'Absent']);
+      .filter(a => {
+        if (attendedEmails.has(a.email.toLowerCase())) return false;
+        const aName = (a.displayName || '').toLowerCase().trim();
+        if (attendedNames.has(aName)) return false;
+        // First-name match as fallback (handles different email, same person)
+        const aFirst = aName.split(' ')[0];
+        if (aFirst) {
+          for (const name of attendedNames) {
+            if (name.split(' ')[0] === aFirst) return false;
+          }
+        }
+        return true;
+      })
+      .map(a => [sanitizeCell(a.displayName), sanitizeCell(a.email), fmtRsvp(a.status), '', '', '', '0%', 0, 'Absent']);
 
     const allRows = [...rows, ...noShows];
 
