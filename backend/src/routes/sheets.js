@@ -3,6 +3,7 @@ const { google } = require('googleapis');
 const { makeJWT } = require('../services/googleAuth');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
+const { persistExport } = require('../services/firestore');
 
 const router = Router();
 
@@ -57,7 +58,17 @@ router.post('/save-to-sheets', async (req, res) => {
     });
 
     log.info('exported to sheets', { tabName, rows: rows.length });
-    res.json({ success: true, sheetUrl: `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}` });
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}`;
+    res.json({ success: true, sheetUrl });
+
+    // Fire-and-forget: audit trail for exports
+    persistExport({
+      meetingTitle: meetingTitle || 'Unknown',
+      tabName,
+      exportedAt,
+      participantCount: participants.length,
+      sheetUrl,
+    });
 
   } catch (err) {
     log.error('sheets export failed', { error: err.message });
