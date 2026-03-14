@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { getMeetToken } = require('../services/googleAuth');
 const { meetGet, meetGetAll } = require('../services/meetApi');
 const log = require('../lib/logger');
+const { persistAttendance } = require('../services/firestore');
 
 const router = Router();
 
@@ -61,6 +62,9 @@ router.get('/attendance', async (req, res) => {
     );
 
     res.json({ participants });
+
+    // Fire-and-forget: persist to Firestore for analytics
+    persistAttendance(conferenceId, conferenceRecord.name, participants);
 
   } catch (err) {
     log.error('attendance fetch failed', { error: err.message });
