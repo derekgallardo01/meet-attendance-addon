@@ -9,6 +9,7 @@ const sheetsRoutes = require('./routes/sheets');
 const calendarRoutes = require('./routes/calendar');
 
 const app = express();
+app.set('trust proxy', 1); // Cloud Run runs behind a load balancer
 
 app.use(express.json());
 app.use(cors({ origin: CONFIG.allowedOrigins }));
