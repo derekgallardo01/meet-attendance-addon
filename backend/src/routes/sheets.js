@@ -73,7 +73,7 @@ router.post('/save-to-sheets', async (req, res) => {
       ['Meeting', meetingTitle || 'Google Meet'],
       ['Meeting ID', conferenceId || 'N/A'],
       ['Date', fmtDate(meetingStartTime || exportedAt)],
-      ['Duration (min)', meetDurationMin || 'N/A'],
+      ['Duration (min)', meetStart ? (meetDurationMin || '< 1') : 'N/A'],
       ['Total Invited', totalInvited],
       ['Total Attended', totalAttended],
       ['Attendance Rate', attendanceRate],
