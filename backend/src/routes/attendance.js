@@ -65,11 +65,12 @@ router.get('/attendance', async (req, res) => {
           leaveTime:     leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
           present,
           sessions:      sessions.length,
+          _debugSessions: sessions.map(s => ({ start: s.startTime, end: s.endTime || null })),
         };
       })
     );
 
-    res.json({ participants });
+    res.json({ participants, _debug: { recordName: conferenceRecord.name, recordCount: records.length } });
 
     // Fire-and-forget: persist to Firestore for analytics
     persistAttendance(conferenceId, conferenceRecord.name, participants);
