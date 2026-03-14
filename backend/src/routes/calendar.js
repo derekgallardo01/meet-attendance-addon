@@ -29,11 +29,26 @@ router.get('/calendar-attendees', async (req, res) => {
     const events = eventsResp.data.items || [];
     log.info('calendar events scanned', { count: events.length, meetingCode });
 
-    const matchedEvent = events.find(e => {
+    // Find all events matching this meeting code (recurring meetings share the same code)
+    const matchingEvents = events.filter(e => {
       const meetLink    = e.conferenceData?.entryPoints?.find(ep => ep.entryPointType === 'video')?.uri || '';
       const hangoutLink = e.hangoutLink || '';
       return meetLink.includes(meetingCode) || hangoutLink.includes(meetingCode);
     });
+
+    // Pick the event closest to the current time (handles recurring meetings)
+    let matchedEvent = null;
+    if (matchingEvents.length === 1) {
+      matchedEvent = matchingEvents[0];
+    } else if (matchingEvents.length > 1) {
+      const now = Date.now();
+      matchedEvent = matchingEvents.reduce((closest, e) => {
+        const eStart = new Date(e.start.dateTime || e.start.date).getTime();
+        const closestStart = new Date(closest.start.dateTime || closest.start.date).getTime();
+        return Math.abs(eStart - now) < Math.abs(closestStart - now) ? e : closest;
+      });
+      log.info('recurring meeting — picked closest instance', { total: matchingEvents.length, picked: matchedEvent.start.dateTime });
+    }
 
     if (!matchedEvent) {
       log.info('no calendar event matched — instant meeting', { meetingCode });
