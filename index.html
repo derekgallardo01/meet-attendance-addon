@@ -498,6 +498,61 @@
     .btn-google:hover { background: #f7f8f8; }
     .btn-google svg { width: 14px; height: 14px; flex-shrink: 0; }
 
+    /* ── activity notifications ─────────────────────────────── */
+    #activity-feed {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 90;
+      pointer-events: none;
+      max-width: 260px;
+    }
+    .activity-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text);
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      animation: noteIn .25s ease-out;
+      transition: opacity .3s, transform .3s;
+      overflow: hidden;
+    }
+    .activity-note.fade-out {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    @keyframes noteIn {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .activity-note .note-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .activity-note .note-dot.joined  { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .activity-note .note-dot.left    { background: #f85149; box-shadow: 0 0 6px #f85149; }
+    .activity-note .note-dot.rejoin  { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+    .activity-note .note-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .activity-note .note-action {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
     /* ── toast ───────────────────────────────────────────────── */
     #toast {
       position: fixed;
@@ -706,6 +761,9 @@
       <span>Press <strong>Start</strong> to begin tracking</span>
     </div>
   </div>
+
+  <!-- ── Activity Feed ── -->
+  <div id="activity-feed"></div>
 
   <!-- ── Toast ── -->
   <div id="toast"></div>
@@ -999,14 +1057,17 @@ function mergeParticipants(incoming = []) {
         present:        apiPresent,
         sessions:       1,
       });
+      if (apiPresent) showActivityNote(p.displayName, 'joined');
     } else {
       const existing = state.participants.get(key);
       const newSessions = p.sessions || existing.sessions;
       // If session count went up, they rejoined — mark present immediately
       if (newSessions > existing.sessions) {
+        if (!existing.present) showActivityNote(p.displayName, 'rejoined');
         existing.present = true;
         existing._leftStreak = 0;
       } else if (apiPresent) {
+        if (!existing.present) showActivityNote(p.displayName, 'rejoined');
         existing.present = true;
         existing._leftStreak = 0;
       } else if (existing.present) {
@@ -1015,6 +1076,7 @@ function mergeParticipants(incoming = []) {
         existing._leftStreak = (existing._leftStreak || 0) + 1;
         if (existing._leftStreak >= 3) {
           existing.present = false;
+          showActivityNote(p.displayName, 'left');
         }
       }
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
@@ -1361,6 +1423,37 @@ function updateSearchStats() {
 
 function showSearchBar() {
   document.getElementById('search-bar').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVITY NOTIFICATIONS
+═══════════════════════════════════════════════════════════════ */
+function showActivityNote(name, type) {
+  const feed = document.getElementById('activity-feed');
+  const note = document.createElement('div');
+  note.className = 'activity-note';
+
+  const dotClass = type === 'joined' ? 'joined' : type === 'rejoined' ? 'rejoin' : 'left';
+  const actionText = type === 'joined' ? 'joined' : type === 'rejoined' ? 'rejoined' : 'left';
+
+  note.innerHTML = `
+    <span class="note-dot ${dotClass}"></span>
+    <span class="note-name">${escHtml(name)}</span>
+    <span class="note-action">${actionText}</span>
+  `;
+
+  feed.appendChild(note);
+
+  // Max 4 visible at once
+  while (feed.children.length > 4) {
+    feed.removeChild(feed.firstChild);
+  }
+
+  // Fade out and remove after 3 seconds
+  setTimeout(() => {
+    note.classList.add('fade-out');
+    setTimeout(() => note.remove(), 300);
+  }, 3000);
 }
 
 /* ═══════════════════════════════════════════════════════════════
