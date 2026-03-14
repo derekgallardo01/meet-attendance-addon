@@ -7,6 +7,7 @@ const { persistCalendarData } = require('../services/firestore');
 const router = Router();
 
 router.get('/calendar-attendees', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const { meetingCode } = req.query;
   if (!meetingCode) return res.status(400).json({ error: 'meetingCode is required' });
 

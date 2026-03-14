@@ -7,6 +7,7 @@ const { persistAttendance } = require('../services/firestore');
 const router = Router();
 
 router.get('/attendance', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const { conferenceId } = req.query;
   if (!conferenceId) return res.status(400).json({ error: 'conferenceId is required' });
 
