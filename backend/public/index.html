@@ -59,6 +59,13 @@
       display: flex;
       flex-direction: column;
     }
+    /* Simulate Meet side panel width when running outside Meet */
+    body.sim-mode {
+      max-width: 360px;
+      margin: 0 auto;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
 
     /* ── header ──────────────────────────────────────────────── */
     header {
@@ -1433,6 +1440,7 @@ function startSimulation() {
   state.conferenceId = null;
   state.meetingTitle = `Webinar Demo (${sim.targetCount} attendees)`;
   document.getElementById('meeting-title').textContent = state.meetingTitle;
+  document.getElementById('auth-bar').style.display = 'none';
 
   // Start tracking with simulation-adjusted poll interval
   const pollMs = Math.max(1000, 30000 / sim.speed);
@@ -1516,6 +1524,8 @@ function updateSimProgress() {
 }
 
 function showSimControls() {
+  document.getElementById('auth-bar').style.display = 'none';
+  document.body.classList.add('sim-mode');
   const container = document.getElementById('participant-list');
   container.innerHTML = `
     <div class="sim-panel" id="sim-controls">
