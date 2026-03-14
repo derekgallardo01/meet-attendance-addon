@@ -1,7 +1,8 @@
 const { Router } = require('express');
 const { google } = require('googleapis');
-const { getMeetToken, makeJWT } = require('../services/googleAuth');
+const { getMeetToken, makeJWT, loadServiceAccountKey } = require('../services/googleAuth');
 const { meetGet, meetGetAll } = require('../services/meetApi');
+const CONFIG = require('../config');
 const log = require('../lib/logger');
 const { persistAttendance } = require('../services/firestore');
 
@@ -18,22 +19,54 @@ function extractUserId(participantPath) {
 // Look up emails from Google Workspace Directory for participants missing emails
 async function enrichEmails(participants) {
   const needsLookup = participants.filter(p => !p.email && extractUserId(p.participantId));
+  log.info('enrichEmails called', { total: participants.length, needsLookup: needsLookup.length });
   if (needsLookup.length === 0) return;
+  if (!CONFIG.adminEmail) {
+    log.info('ADMIN_EMAIL not set, skipping directory enrichment');
+    return;
+  }
 
   try {
-    const dirAuth = await makeJWT(['https://www.googleapis.com/auth/admin.directory.user.readonly']);
+    // Use admin email for Directory API (requires Workspace admin privileges)
+    const key = await loadServiceAccountKey();
+    const dirAuth = new google.auth.JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: ['https://www.googleapis.com/auth/admin.directory.user.readonly'],
+      subject: CONFIG.adminEmail,
+    });
+    await dirAuth.authorize();
     const directory = google.admin({ version: 'directory_v1', auth: dirAuth });
 
     await Promise.all(needsLookup.map(async (p) => {
       const userId = extractUserId(p.participantId);
+      log.info('directory lookup', { userId, displayName: p.displayName });
       try {
+        // Try direct user ID lookup first
         const resp = await directory.users.get({ userKey: userId });
+        log.info('directory lookup result', { userId, email: resp.data.primaryEmail });
         if (resp.data.primaryEmail) {
           p.email = resp.data.primaryEmail;
         }
       } catch (e) {
-        // User not in this Workspace org (external guest) — expected, skip
-        log.debug?.('directory lookup miss', { userId, error: e.message });
+        log.info('directory id lookup miss, trying name search', { userId, error: e.message });
+        // Fallback: search by display name
+        try {
+          const searchResp = await directory.users.list({
+            customer: 'my_customer',
+            query: `name:'${p.displayName}'`,
+            maxResults: 1,
+          });
+          const user = searchResp.data.users?.[0];
+          if (user?.primaryEmail) {
+            p.email = user.primaryEmail;
+            log.info('directory name search hit', { displayName: p.displayName, email: user.primaryEmail });
+          } else {
+            log.info('directory name search miss', { displayName: p.displayName });
+          }
+        } catch (e2) {
+          log.warn('directory name search failed', { displayName: p.displayName, error: e2.message });
+        }
       }
     }));
 
