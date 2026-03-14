@@ -130,12 +130,13 @@ router.post('/save-to-sheets', async (req, res) => {
       if (email) attendedEmails.add(email);
       const name = (p.displayName || '').toLowerCase().trim();
       if (name) attendedNames.add(name);
-      const dur = p.joinTimeISO
+      const durRaw = p.joinTimeISO
         ? Math.round((new Date(p.leaveTimeISO || exportedAt) - new Date(p.joinTimeISO)) / 60000)
         : '';
-      const pct = (dur !== '' && meetDurationMin > 0)
-        ? Math.min(100, Math.round((dur / meetDurationMin) * 100)) + '%'
-        : '';
+      const dur = (durRaw === 0 && p.present) ? '< 1' : durRaw;
+      const pct = (durRaw !== '' && meetDurationMin > 0)
+        ? Math.min(100, Math.round((durRaw / meetDurationMin) * 100)) + '%'
+        : (p.present ? '100%' : '');
       return [sanitizeCell(p.displayName), sanitizeCell(p.email || ''), fmtRsvp(rsvpMap[email]), fmtET(p.joinTimeISO), fmtET(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
     });
 

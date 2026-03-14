@@ -1356,8 +1356,14 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
     meetingStartTime: state.startTime ? state.startTime.toISOString() : null,
     calendarAttendees,
     participants: [...state.participants.values()].map(p => {
-      const joinTime  = p.joinTime || p.trackedJoinTime || new Date();
-      const leaveTime = p.leaveTime || null;
+      // Use earliest known join time (API or frontend-tracked)
+      const apiJoin = p.joinTime ? p.joinTime.getTime() : Infinity;
+      const trackedJoin = p.trackedJoinTime ? p.trackedJoinTime.getTime() : Infinity;
+      const joinTime = new Date(Math.min(apiJoin, trackedJoin));
+
+      // If currently present, don't send a stale leave time from a previous session
+      const leaveTime = p.present ? null : (p.leaveTime || null);
+
       return {
         displayName:  p.displayName,
         email:        emailMap[p.displayName] || p.email || '',
