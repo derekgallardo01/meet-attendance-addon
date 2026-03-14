@@ -675,20 +675,16 @@ async function refreshAttendance() {
    MERGE INCOMING PARTICIPANTS INTO STATE MAP
 ═══════════════════════════════════════════════════════════════ */
 function mergeParticipants(incoming = []) {
-  // Mark everyone currently present as potentially gone
-  for (const [, p] of state.participants) {
-    if (p.present) p.present = false;
+  // Only mark participants as gone if they're NOT in the incoming list at all
+  const incomingKeys = new Set(incoming.map(p => p.participantId || p.displayName));
+  for (const [key, p] of state.participants) {
+    if (p.present && !incomingKeys.has(key)) p.present = false;
   }
 
-  const now = Date.now();
   for (const p of incoming) {
     // Use participantId from API (unique per person), fall back to displayName for demo mode
     const key = p.participantId || p.displayName;
-    // Meet API has a lag — treat participants whose last session ended
-    // within 2 minutes as potentially still present
     const apiPresent = p.present ?? true;
-    const leaveRecent = p.leaveTime && (now - new Date(p.leaveTime).getTime()) < 120_000;
-    const isPresent = apiPresent || leaveRecent;
     if (!state.participants.has(key)) {
       state.participants.set(key, {
         participantId:  p.participantId || null,
@@ -697,12 +693,19 @@ function mergeParticipants(incoming = []) {
         joinTime:       p.joinTime ? new Date(p.joinTime) : null,
         trackedJoinTime: new Date(), // always record when we first saw them
         leaveTime:      p.leaveTime ? new Date(p.leaveTime) : null,
-        present:        isPresent,
+        present:        apiPresent,
         sessions:       1,
       });
     } else {
       const existing = state.participants.get(key);
-      existing.present   = isPresent;
+      // Never downgrade from Present to Left — Meet API lags behind reality.
+      // Only mark Left if API explicitly says not present AND leaveTime changed.
+      if (!apiPresent && p.leaveTime && existing.leaveTime?.getTime() !== new Date(p.leaveTime).getTime()) {
+        existing.present = false;
+      } else if (apiPresent) {
+        existing.present = true;
+      }
+      // else: keep existing present state (API is stale)
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
       existing.sessions  = p.sessions || existing.sessions;
     }
