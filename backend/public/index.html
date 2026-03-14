@@ -234,6 +234,60 @@
     .chip-value.green { color: var(--accent); }
     .chip-value.blue  { color: var(--accent2); }
 
+    /* ── search bar ─────────────────────────────────────────── */
+    .search-bar {
+      padding: 0 16px 8px;
+      flex-shrink: 0;
+    }
+    .search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input-wrap svg {
+      position: absolute;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 7px 10px 7px 30px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-input::placeholder { color: #3d444d; }
+    .search-input:focus { border-color: var(--accent2); }
+    .search-clear {
+      position: absolute;
+      right: 6px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 4px;
+      display: none;
+      flex: none;
+    }
+    .search-clear:hover { color: var(--text); background: var(--border); }
+    .search-stats {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      padding: 2px 0 0 2px;
+    }
+
     /* ── participant list ────────────────────────────────────── */
     .list-header {
       padding: 0 16px 6px;
@@ -629,6 +683,16 @@
     </div>
   </div>
 
+  <!-- ── Search ── -->
+  <div class="search-bar" id="search-bar" style="display:none">
+    <div class="search-input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="search-input" type="text" placeholder="Search by name or email…" oninput="handleSearch()" />
+      <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
+    </div>
+    <div class="search-stats" id="search-stats"></div>
+  </div>
+
   <!-- ── Participant list ── -->
   <div class="list-header">Participants</div>
   <div id="participant-list">
@@ -841,6 +905,7 @@ function startTracking() {
   document.getElementById('btn-sheets').disabled  = false;
 
   setStatus('active', 'Tracking attendance…');
+  showSearchBar();
   startDurationTimer();
   refreshAttendance();
 
@@ -988,8 +1053,25 @@ function renderList() {
     return;
   }
 
-  // Sort: present first, then by join time
-  const sorted = [...state.participants.values()].sort((a, b) => {
+  // Filter by search query, then sort: present first, then by join time
+  let filtered = [...state.participants.values()];
+  if (_searchQuery) {
+    filtered = filtered.filter(p =>
+      p.displayName.toLowerCase().includes(_searchQuery) ||
+      (p.email || '').toLowerCase().includes(_searchQuery)
+    );
+  }
+
+  if (_searchQuery && filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>No matches for "${escHtml(_searchQuery)}"</span>
+      </div>`;
+    return;
+  }
+
+  const sorted = filtered.sort((a, b) => {
     if (a.present !== b.present) return b.present - a.present;
     return (a.joinTime || 0) - (b.joinTime || 0);
   });
@@ -1248,6 +1330,40 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   SEARCH / FILTER
+═══════════════════════════════════════════════════════════════ */
+let _searchQuery = '';
+
+function handleSearch() {
+  const input = document.getElementById('search-input');
+  const clearBtn = document.getElementById('search-clear');
+  _searchQuery = (input.value || '').toLowerCase().trim();
+  clearBtn.style.display = _searchQuery ? 'block' : 'none';
+  renderList();
+  updateSearchStats();
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('search-stats').textContent = '';
+  _searchQuery = '';
+  renderList();
+}
+
+function updateSearchStats() {
+  const el = document.getElementById('search-stats');
+  if (!_searchQuery) { el.textContent = ''; return; }
+  const total = state.participants.size;
+  const visible = document.querySelectorAll('#participant-list .participant-card').length;
+  el.textContent = `${visible} of ${total} shown`;
+}
+
+function showSearchBar() {
+  document.getElementById('search-bar').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DURATION TIMER
 ═══════════════════════════════════════════════════════════════ */
 function startDurationTimer() {
@@ -1460,6 +1576,7 @@ function startSimulation() {
   document.getElementById('btn-sheets').disabled = false;
 
   setStatus('active', 'Simulation running…');
+  showSearchBar();
   startDurationTimer();
 
   // Override the poll interval for simulation speed
