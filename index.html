@@ -483,6 +483,10 @@
     </button>
   </div>
 
+  <div id="sheet-link-bar" style="display:none; padding:4px 16px; font-size:11px;">
+    <a id="sheet-link" href="#" target="_blank" style="color:var(--green); text-decoration:none;">📄 Open exported sheet</a>
+  </div>
+
   <!-- ── Summary ── -->
   <div class="summary-row">
     <div class="chip">
@@ -490,7 +494,11 @@
       <div class="chip-value green" id="count-present">—</div>
     </div>
     <div class="chip">
-      <div class="chip-label">Total Seen</div>
+      <div class="chip-label">Left</div>
+      <div class="chip-value" id="count-left" style="color:#f85149">—</div>
+    </div>
+    <div class="chip">
+      <div class="chip-label">Total</div>
       <div class="chip-value blue" id="count-total">—</div>
     </div>
     <div class="chip">
@@ -753,12 +761,15 @@ function renderList() {
     const initials = p.displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     const joinStr  = p.joinTime ? fmtTime(p.joinTime) : '—';
     const durStr   = p.joinTime ? fmtDur(p.joinTime, p.leaveTime || new Date()) : '';
+    const leaveStr = (!p.present && p.leaveTime) ? ' · Left ' + fmtTime(p.leaveTime) : '';
+    const emailStr = p.email ? `<div class="participant-meta">${escHtml(p.email)}</div>` : '';
     return `
       <div class="participant-card ${p.present ? '' : 'left'}">
         <div class="avatar">${initials}</div>
         <div>
           <div class="participant-name">${escHtml(p.displayName)}</div>
-          <div class="participant-meta">Joined ${joinStr}${durStr ? ' · ' + durStr : ''}</div>
+          ${emailStr}
+          <div class="participant-meta">Joined ${joinStr}${durStr ? ' · ' + durStr : ''}${leaveStr}</div>
         </div>
         <span class="badge ${p.present ? 'present' : 'left'}">${p.present ? 'Present' : 'Left'}</span>
       </div>`;
@@ -767,7 +778,9 @@ function renderList() {
 
 function updateSummary() {
   const present = [...state.participants.values()].filter(p => p.present).length;
+  const left = state.participants.size - present;
   document.getElementById('count-present').textContent = present;
+  document.getElementById('count-left').textContent = left;
   document.getElementById('count-total').textContent   = state.participants.size;
 }
 
@@ -988,7 +1001,11 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
     btn.textContent = '✓ Exported';
     btn.disabled = true;
     setTimeout(() => { btn.textContent = '⬜ Sheet'; btn.disabled = false; }, 4000);
-    if (sheetUrl) window.open(sheetUrl, '_blank');
+    if (sheetUrl) {
+      window.open(sheetUrl, '_blank');
+      document.getElementById('sheet-link').href = sheetUrl;
+      document.getElementById('sheet-link-bar').style.display = 'block';
+    }
   } catch (err) {
     toast(`⚠ Sheets error: ${err.message}`);
   }
