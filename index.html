@@ -335,6 +335,59 @@
     .badge.present { background: rgba(63,185,80,.12); color: var(--accent); border: 1px solid rgba(63,185,80,.25); }
     .badge.left    { background: rgba(125,133,144,.08); color: var(--muted); border: 1px solid var(--border); }
 
+    /* ── simulation controls ─────────────────────────────────── */
+    .sim-panel {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .sim-panel .sim-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent2);
+    }
+    .sim-panel .sim-desc {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .sim-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      align-items: center;
+    }
+    .sim-row label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      width: 70px;
+      flex-shrink: 0;
+    }
+    .sim-row select {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    .sim-row select:focus { outline: none; border-color: var(--accent2); }
+    .sim-progress {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+
     /* ── auth bar ────────────────────────────────────────────── */
     #auth-bar {
       display: flex;
@@ -728,9 +781,10 @@ async function initSDK() {
     console.log('[Attendance] waitForMeet result:', ready, 'window.meet =', typeof window.meet);
 
     if (!ready) {
-      // Not inside Meet — show demo data
+      // Not inside Meet — show simulation controls
       document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
-      setStatus('loading', 'Demo mode — open inside Meet to connect');
+      setStatus('loading', 'Demo mode — configure simulation below');
+      showSimControls();
       return;
     }
 
@@ -762,7 +816,8 @@ async function initSDK() {
   } catch (err) {
     console.error('[Attendance] SDK error:', err.message);
     document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
-    setStatus('loading', 'SDK error — see console');
+    setStatus('loading', 'Demo mode — configure simulation below');
+    showSimControls();
   }
 }
 
@@ -1228,9 +1283,276 @@ function toast(msg) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DEMO DATA (used when running outside Meet)
+   SIMULATION ENGINE (used when running outside Meet)
 ═══════════════════════════════════════════════════════════════ */
+const SIM_NAMES = [
+  { name: 'Sarah Chen', email: 'sarah.chen@acmecorp.com' },
+  { name: 'Marcus Johnson', email: 'marcus.j@techstart.io' },
+  { name: 'Priya Patel', email: 'priya@designhub.co' },
+  { name: 'James O\'Brien', email: 'jobrien@globalfin.com' },
+  { name: 'Aisha Mohammed', email: 'aisha.m@cloudwave.io' },
+  { name: 'David Kim', email: 'dkim@nextera.com' },
+  { name: 'Maria Garcia', email: 'maria.garcia@brightpath.org' },
+  { name: 'Wei Zhang', email: 'wei.zhang@innovatech.co' },
+  { name: 'Rachel Thompson', email: 'rthompson@mediapulse.com' },
+  { name: 'Omar Hassan', email: 'omar@datastream.io' },
+  { name: 'Emily Watson', email: 'emily.w@creativelab.co' },
+  { name: 'Carlos Rivera', email: 'carlos@buildright.com' },
+  { name: 'Yuki Tanaka', email: 'yuki.tanaka@eastbridge.jp' },
+  { name: 'Fatima Al-Rashid', email: 'fatima@gulfventures.ae' },
+  { name: 'Alex Petrov', email: 'apetrov@novasoft.ru' },
+  { name: 'Olivia Brown', email: 'olivia.b@healthfirst.com' },
+  { name: 'Raj Krishnan', email: 'raj.k@quantumleap.in' },
+  { name: 'Sofia Andersson', email: 'sofia@nordicdesign.se' },
+  { name: 'Michael Okafor', email: 'mokafor@afrotech.ng' },
+  { name: 'Hannah Lee', email: 'hannah.lee@smartgrid.com' },
+  { name: 'Liam Murphy', email: 'liam@greenfield.ie' },
+  { name: 'Nina Volkov', email: 'nina.v@spektra.de' },
+  { name: 'Tyler Brooks', email: 'tbrooks@suncoast.com' },
+  { name: 'Amara Osei', email: 'amara@techbridge.gh' },
+  { name: 'Daniel Park', email: 'dpark@bluewave.kr' },
+  { name: 'Isabella Rossi', email: 'isabella@artisano.it' },
+  { name: 'Nathan Clarke', email: 'nclarke@pacifica.au' },
+  { name: 'Zara Ahmed', email: 'zara.a@skylinelabs.pk' },
+  { name: 'Ryan Mitchell', email: 'rmitchell@redstone.ca' },
+  { name: 'Camille Dubois', email: 'camille@lumiere.fr' },
+  { name: 'Kwame Asante', email: 'kwame@goldcoast.gh' },
+  { name: 'Victoria Smirnova', email: 'victoria@northstar.fi' },
+  { name: 'Joshua Adams', email: 'jadams@pinnacle.com' },
+  { name: 'Mei Lin', email: 'mei.lin@dragontech.cn' },
+  { name: 'Patrick Nolan', email: 'pnolan@atlantic.ie' },
+  { name: 'Leila Farah', email: 'leila@oasisgroup.lb' },
+  { name: 'Brandon Scott', email: 'bscott@summit.us' },
+  { name: 'Anya Sharma', email: 'anya.s@vivid.in' },
+  { name: 'Chris Walker', email: 'cwalker@ironbridge.uk' },
+  { name: 'Diana Reyes', email: 'diana@solaris.mx' },
+  { name: 'Ethan Nguyen', email: 'ethan.n@apexdata.com' },
+  { name: 'Grace Kim', email: 'grace.kim@harmony.kr' },
+  { name: 'Hugo Fernandez', email: 'hugo@crestline.es' },
+  { name: 'Iris Chang', email: 'iris.chang@pearltech.tw' },
+  { name: 'Jake Morrison', email: 'jmorrison@valiant.com' },
+  { name: 'Karen Oduya', email: 'karen@trailblaze.ke' },
+  { name: 'Lucas Martin', email: 'lucas@zenith.fr' },
+  { name: 'Monica Pinto', email: 'monica@vistanova.br' },
+  { name: 'Nate Richardson', email: 'nate.r@clearview.com' },
+  { name: 'Olga Petrova', email: 'olga@crystalnet.ru' },
+  { name: 'Paul Henderson', email: 'phenderson@oakmont.com' },
+  { name: 'Quinn Taylor', email: 'quinn@futurescope.io' },
+  { name: 'Rosa Hernandez', email: 'rosa@mariposa.mx' },
+  { name: 'Sam Blackwood', email: 'sblackwood@steelvault.com' },
+  { name: 'Tara Singh', email: 'tara.s@prismworks.in' },
+  { name: 'Uma Nakamura', email: 'uma@sakuralab.jp' },
+  { name: 'Victor Almeida', email: 'victor@tropicana.br' },
+  { name: 'Wendy Zhao', email: 'wendy.z@brightmind.cn' },
+  { name: 'Xavier Dupont', email: 'xavier@elysium.fr' },
+  { name: 'Yara Costa', email: 'yara@oceanic.pt' },
+];
+
+const sim = {
+  active: false,
+  targetCount: 50,
+  speed: 5,
+  elapsed: 0,
+  pool: [],
+  startTime: null,
+  timer: null,
+};
+
+function getJoinDelay(index, total) {
+  const pct = index / total;
+  if (pct < 0.1)  return Math.random() * 60;             // early birds: 0-60s
+  if (pct < 0.5)  return 60 + Math.random() * 120;       // main wave: 1-3 min
+  if (pct < 0.8)  return 180 + Math.random() * 120;      // on-time: 3-5 min
+  return 300 + Math.random() * 300;                       // stragglers: 5-10 min
+}
+
+function generateSimSchedule(count) {
+  const shuffled = [...SIM_NAMES].sort(() => Math.random() - 0.5).slice(0, count);
+  return shuffled.map((person, i) => {
+    const joinDelay = getJoinDelay(i, count);
+    const willLeave = Math.random() < 0.2;
+    const leaveDelay = willLeave ? joinDelay + 300 + Math.random() * 600 : null;
+    const willRejoin = willLeave && Math.random() < 0.5;
+    const rejoinDelay = willRejoin ? leaveDelay + 120 + Math.random() * 180 : null;
+    return {
+      displayName: person.name,
+      email: person.email,
+      participantId: `sim/participants/${i}`,
+      joinDelay,
+      leaveDelay,
+      rejoinDelay,
+      sessions: willRejoin ? 2 : 1,
+    };
+  });
+}
+
+function getSimulationState() {
+  const now = sim.elapsed;
+  const baseTime = sim.startTime;
+  const participants = [];
+
+  for (const p of sim.pool) {
+    if (now < p.joinDelay) continue; // hasn't joined yet
+
+    const joinTime = new Date(baseTime + p.joinDelay * 1000);
+    let present = true;
+    let leaveTime = null;
+    let sessions = 1;
+
+    if (p.leaveDelay && now >= p.leaveDelay) {
+      leaveTime = new Date(baseTime + p.leaveDelay * 1000);
+      present = false;
+
+      if (p.rejoinDelay && now >= p.rejoinDelay) {
+        present = true;
+        leaveTime = null;
+        sessions = 2;
+      }
+    }
+
+    participants.push({
+      participantId: p.participantId,
+      displayName: p.displayName,
+      email: p.email,
+      joinTime: joinTime.toISOString(),
+      leaveTime: leaveTime ? leaveTime.toISOString() : null,
+      present,
+      sessions,
+    });
+  }
+
+  return { participants };
+}
+
+function startSimulation() {
+  sim.active = true;
+  sim.elapsed = 0;
+  sim.startTime = Date.now();
+  sim.pool = generateSimSchedule(sim.targetCount);
+
+  state.conferenceId = null;
+  state.meetingTitle = `Webinar Demo (${sim.targetCount} attendees)`;
+  document.getElementById('meeting-title').textContent = state.meetingTitle;
+
+  // Start tracking with simulation-adjusted poll interval
+  const pollMs = Math.max(1000, 30000 / sim.speed);
+
+  state.tracking = true;
+  state.startTime = new Date(sim.startTime);
+  state.participants.clear();
+
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-refresh').disabled = false;
+  document.getElementById('btn-sheets').disabled = false;
+
+  setStatus('active', 'Simulation running…');
+  startDurationTimer();
+
+  // Override the poll interval for simulation speed
+  clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
+  clearInterval(sim.timer);
+
+  function simPoll() {
+    sim.elapsed += 30; // advance 30 simulated seconds per tick
+    const data = getSimulationState();
+    mergeParticipants(data.participants);
+    renderList();
+    updateSummary();
+    updateSimProgress();
+    setStatus('active', `Tracking · ${state.participants.size} seen`);
+  }
+
+  simPoll(); // first tick immediately
+  sim.timer = setInterval(simPoll, pollMs);
+
+  // Update the countdown display
+  state.syncCountdown = Math.round(pollMs / 1000);
+  state.countdownTimer = setInterval(() => {
+    state.syncCountdown = Math.max(0, state.syncCountdown - 1);
+    if (state.syncCountdown === 0) state.syncCountdown = Math.round(pollMs / 1000);
+    updateLastRefresh();
+  }, 1000);
+
+  document.getElementById('sim-controls').style.display = 'none';
+}
+
+function resetSimulation() {
+  sim.active = false;
+  sim.elapsed = 0;
+  sim.pool = [];
+  clearInterval(sim.timer);
+  clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
+  clearInterval(state.durationTimer);
+
+  state.tracking = false;
+  state.participants.clear();
+  state.startTime = null;
+
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-refresh').disabled = true;
+  document.getElementById('btn-sheets').disabled = true;
+  document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+  document.getElementById('count-present').textContent = '—';
+  document.getElementById('count-left').textContent = '—';
+  document.getElementById('count-total').textContent = '—';
+  document.getElementById('meeting-duration').textContent = '—';
+
+  setStatus('loading', 'Demo mode — configure simulation below');
+  renderList(); // shows empty state
+  document.getElementById('sim-controls').style.display = 'flex';
+  document.getElementById('sim-progress').textContent = '';
+}
+
+function updateSimProgress() {
+  const joined = state.participants.size;
+  const present = [...state.participants.values()].filter(p => p.present).length;
+  const left = joined - present;
+  const mins = Math.floor(sim.elapsed / 60);
+  const secs = sim.elapsed % 60;
+  const el = document.getElementById('sim-progress');
+  if (el) el.textContent = `${joined}/${sim.targetCount} joined · ${left} left · ${mins}m ${secs}s simulated`;
+}
+
+function showSimControls() {
+  const container = document.getElementById('participant-list');
+  container.innerHTML = `
+    <div class="sim-panel" id="sim-controls">
+      <div class="sim-title">Webinar Simulation</div>
+      <div class="sim-desc">Simulate participants joining a webinar at realistic intervals for your demo video.</div>
+      <div class="sim-row">
+        <label>Attendees</label>
+        <select id="sim-count" onchange="sim.targetCount=+this.value">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="40">40</option>
+          <option value="50" selected>50</option>
+        </select>
+      </div>
+      <div class="sim-row">
+        <label>Speed</label>
+        <select id="sim-speed" onchange="sim.speed=+this.value">
+          <option value="1">1x (real-time)</option>
+          <option value="2">2x</option>
+          <option value="5" selected>5x</option>
+          <option value="10">10x</option>
+          <option value="20">20x</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="startSimulation()" style="width:100%">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Start Simulation
+      </button>
+      <div class="sim-progress" id="sim-progress"></div>
+    </div>`;
+}
+
+// Legacy fallback for non-simulation demo mode
 function demoParticipants() {
+  if (sim.active) return getSimulationState();
   const base = Date.now() - 900_000;
   return { participants: [
     { displayName: 'Alex Rivera',     joinTime: new Date(base),           leaveTime: null,                  present: true  },
