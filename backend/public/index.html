@@ -708,15 +708,19 @@ function mergeParticipants(incoming = []) {
       });
     } else {
       const existing = state.participants.get(key);
-      // Never downgrade from Present to Left — Meet API lags behind reality.
-      // Only mark Left if API explicitly says not present AND leaveTime changed.
-      if (!apiPresent && p.leaveTime && existing.leaveTime?.getTime() !== new Date(p.leaveTime).getTime()) {
-        existing.present = false;
-      } else if (apiPresent) {
+      if (apiPresent) {
         existing.present = true;
+        existing._leftStreak = 0;
+      } else if (existing.present) {
+        // Meet API lags on rejoins — require 3 consecutive "not present" polls
+        // (~ 90 seconds) before marking as Left to avoid false negatives
+        existing._leftStreak = (existing._leftStreak || 0) + 1;
+        if (existing._leftStreak >= 3) {
+          existing.present = false;
+        }
       }
-      // else: keep existing present state (API is stale)
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
+      existing.email     = p.email || existing.email;
       existing.sessions  = p.sessions || existing.sessions;
     }
   }
