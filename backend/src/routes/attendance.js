@@ -1,0 +1,71 @@
+const { Router } = require('express');
+const { getMeetToken } = require('../services/googleAuth');
+const { meetGet, meetGetAll } = require('../services/meetApi');
+const log = require('../lib/logger');
+
+const router = Router();
+
+router.get('/attendance', async (req, res) => {
+  const { conferenceId } = req.query;
+  if (!conferenceId) return res.status(400).json({ error: 'conferenceId is required' });
+
+  try {
+    const token = await getMeetToken();
+    let records = [];
+
+    try {
+      const data = await meetGet(`conferenceRecords?filter=space.meeting_code%3D%22${conferenceId}%22`, token);
+      records = data.conferenceRecords || [];
+      log.info('records by meeting_code', { count: records.length });
+    } catch (e) {
+      log.warn('meeting_code filter failed', { error: e.message });
+    }
+
+    if (records.length === 0) {
+      try {
+        const spaceName = conferenceId.startsWith('spaces/') ? conferenceId : `spaces/${conferenceId}`;
+        const encoded = encodeURIComponent(`space.name="${spaceName}"`);
+        const data = await meetGet(`conferenceRecords?filter=${encoded}`, token);
+        records = data.conferenceRecords || [];
+        log.info('records by space.name', { count: records.length });
+      } catch (e) {
+        log.warn('space.name filter failed', { error: e.message });
+      }
+    }
+
+    if (records.length === 0) {
+      return res.json({ participants: [], message: 'No conference record yet — meeting may still be live.' });
+    }
+
+    const conferenceRecord = records[records.length - 1];
+    log.info('using conference record', { name: conferenceRecord.name });
+
+    const rawParticipants = await meetGetAll(`${conferenceRecord.name}/participants`, token, 'participants');
+    log.info('participants found', { count: rawParticipants.length });
+
+    const participants = await Promise.all(
+      rawParticipants.map(async (p) => {
+        const sessions = await meetGetAll(`${p.name}/participantSessions`, token, 'participantSessions');
+        const joinTimes  = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
+        const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
+        return {
+          participantId: p.name,
+          displayName:   p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
+          email:         p.user?.email || p.signedinUser?.email || '',
+          joinTime:      joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
+          leaveTime:     leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
+          present:       sessions.some(s => !s.endTime),
+          sessions:      sessions.length,
+        };
+      })
+    );
+
+    res.json({ participants });
+
+  } catch (err) {
+    log.error('attendance fetch failed', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
