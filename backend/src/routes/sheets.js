@@ -27,7 +27,7 @@ function fmtRsvp(status) {
 }
 
 router.post('/save-to-sheets', async (req, res) => {
-  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime } = req.body;
+  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime, conferenceId } = req.body;
   if (!participants?.length) return res.status(400).json({ error: 'participants array is required' });
 
   try {
@@ -71,6 +71,7 @@ router.post('/save-to-sheets', async (req, res) => {
 
     const summary = [
       ['Meeting', meetingTitle || 'Google Meet'],
+      ['Meeting ID', conferenceId || 'N/A'],
       ['Date', fmtDate(meetingStartTime || exportedAt)],
       ['Duration (min)', meetDurationMin || 'N/A'],
       ['Total Invited', totalInvited],
