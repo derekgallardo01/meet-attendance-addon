@@ -681,9 +681,11 @@ function mergeParticipants(incoming = []) {
   }
 
   for (const p of incoming) {
-    const key = p.displayName;
+    // Use participantId from API (unique per person), fall back to displayName for demo mode
+    const key = p.participantId || p.displayName;
     if (!state.participants.has(key)) {
       state.participants.set(key, {
+        participantId:  p.participantId || null,
         displayName:    p.displayName,
         email:          p.email || '',
         joinTime:       p.joinTime ? new Date(p.joinTime) : null,
