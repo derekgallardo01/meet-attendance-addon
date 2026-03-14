@@ -18,20 +18,26 @@ async function auth(req, res, next) {
     const decoded = jwt.verify(authHeader.slice(7), CONFIG.sessionSecret);
     const user = await getUser(decoded.email);
 
-    if (!user || !user.refreshToken) {
-      return res.status(401).json({ error: 'User not found or not authenticated' });
-    }
+    let accessToken = null;
+    if (user?.refreshToken) {
+      // Try to get/refresh access token
+      accessToken = user.accessToken || null;
+      const expiresAt = user.tokenExpiresAt?.toDate ? user.tokenExpiresAt.toDate() : user.tokenExpiresAt;
+      const needsRefresh = !accessToken || !expiresAt || Date.now() > (new Date(expiresAt).getTime() - 5 * 60 * 1000);
 
-    // Check if cached access token is still valid (with 5 min buffer)
-    let accessToken = user.accessToken;
-    const expiresAt = user.tokenExpiresAt?.toDate ? user.tokenExpiresAt.toDate() : user.tokenExpiresAt;
-    const needsRefresh = !accessToken || !expiresAt || Date.now() > (new Date(expiresAt).getTime() - 5 * 60 * 1000);
-
-    if (needsRefresh) {
-      const credentials = await refreshAccessToken(user.refreshToken);
-      accessToken = credentials.access_token;
-      const tokenExpiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
-      await updateUserTokens(decoded.email, { accessToken, tokenExpiresAt });
+      if (needsRefresh) {
+        try {
+          const credentials = await refreshAccessToken(user.refreshToken);
+          accessToken = credentials.access_token;
+          const tokenExpiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
+          await updateUserTokens(decoded.email, { accessToken, tokenExpiresAt });
+        } catch (refreshErr) {
+          log.warn('token refresh failed, continuing without accessToken', { error: refreshErr.message });
+          accessToken = null;
+        }
+      }
+    } else {
+      log.info('user not in Firestore or no refreshToken, continuing without accessToken', { email: decoded.email });
     }
 
     req.user = {
