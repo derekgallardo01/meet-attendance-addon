@@ -16,8 +16,18 @@ function sanitizeTabName(name) {
     || 'Meeting';                  // Fallback if empty after sanitization
 }
 
+function fmtRsvp(status) {
+  switch (status) {
+    case 'accepted':    return 'Accepted';
+    case 'declined':    return 'Declined';
+    case 'tentative':   return 'Tentative';
+    case 'needsAction': return 'No Response';
+    default:            return '';
+  }
+}
+
 router.post('/save-to-sheets', async (req, res) => {
-  const { meetingTitle, tabName: clientTabName, exportedAt, participants } = req.body;
+  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime } = req.body;
   if (!participants?.length) return res.status(400).json({ error: 'participants array is required' });
 
   try {
@@ -41,23 +51,66 @@ router.post('/save-to-sheets', async (req, res) => {
       }
     }
 
-    const header = ['Name', 'Email', 'Join Time (UTC)', 'Leave Time (UTC)', 'Duration (min)', 'Sessions', 'Status'];
+    // Meeting duration for attendance % calculation
+    const joinTimes = participants.map(p => p.joinTimeISO).filter(Boolean).map(t => new Date(t));
+    const meetStart = meetingStartTime ? new Date(meetingStartTime) : (joinTimes.length ? new Date(Math.min(...joinTimes)) : null);
+    const meetEnd = new Date(exportedAt);
+    const meetDurationMin = meetStart ? Math.round((meetEnd - meetStart) / 60000) : 0;
+
+    // RSVP lookup from calendar attendees
+    const rsvpMap = {};
+    for (const a of calendarAttendees) {
+      rsvpMap[a.email.toLowerCase()] = a.status;
+    }
+
+    // Summary rows at top of sheet
+    const fmtDate = iso => iso ? new Date(iso).toUTCString().replace(' GMT', ' UTC') : '';
+    const totalInvited = calendarAttendees.length || participants.length;
+    const totalAttended = participants.length;
+    const attendanceRate = totalInvited > 0 ? Math.round((totalAttended / totalInvited) * 100) + '%' : 'N/A';
+
+    const summary = [
+      ['Meeting', meetingTitle || 'Google Meet'],
+      ['Date', fmtDate(meetingStartTime || exportedAt)],
+      ['Duration (min)', meetDurationMin || 'N/A'],
+      ['Total Invited', totalInvited],
+      ['Total Attended', totalAttended],
+      ['Attendance Rate', attendanceRate],
+      [],
+    ];
+
+    // Build participant rows
+    const header = ['Name', 'Email', 'RSVP Status', 'Join Time (UTC)', 'Leave Time (UTC)', 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
     const fmtUTC = iso => iso ? iso.replace('T', ' ').substring(0, 16) + ' UTC' : '';
+
+    const attendedEmails = new Set();
     const rows = participants.map(p => {
+      const email = (p.email || '').toLowerCase();
+      if (email) attendedEmails.add(email);
       const dur = p.joinTimeISO
         ? Math.round((new Date(p.leaveTimeISO || exportedAt) - new Date(p.joinTimeISO)) / 60000)
         : '';
-      return [p.displayName, p.email || '', fmtUTC(p.joinTimeISO), fmtUTC(p.leaveTimeISO), dur, p.sessions, p.present ? 'Present' : 'Left'];
+      const pct = (dur !== '' && meetDurationMin > 0)
+        ? Math.min(100, Math.round((dur / meetDurationMin) * 100)) + '%'
+        : '';
+      return [p.displayName, p.email || '', fmtRsvp(rsvpMap[email]), fmtUTC(p.joinTimeISO), fmtUTC(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
     });
+
+    // No-shows: calendar invitees who never joined
+    const noShows = calendarAttendees
+      .filter(a => !attendedEmails.has(a.email.toLowerCase()))
+      .map(a => [a.displayName, a.email, fmtRsvp(a.status), '', '', '', '0%', 0, 'Absent']);
+
+    const allRows = [...rows, ...noShows];
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: CONFIG.sheetId,
       range: `'${tabName}'!A1`,
       valueInputOption: 'RAW',
-      requestBody: { values: [header, ...rows] },
+      requestBody: { values: [...summary, header, ...allRows] },
     });
 
-    log.info('exported to sheets', { tabName, rows: rows.length });
+    log.info('exported to sheets', { tabName, rows: allRows.length, noShows: noShows.length });
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}`;
     res.json({ success: true, sheetUrl });
 
@@ -66,7 +119,7 @@ router.post('/save-to-sheets', async (req, res) => {
       meetingTitle: meetingTitle || 'Unknown',
       tabName,
       exportedAt,
-      participantCount: participants.length,
+      participantCount: allRows.length,
       sheetUrl,
     });
 
