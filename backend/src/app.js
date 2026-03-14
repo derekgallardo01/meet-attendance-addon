@@ -1,12 +1,14 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const CONFIG = require('./config');
 const auth = require('./middleware/auth');
 const apiLimiter = require('./middleware/rateLimit');
 const attendanceRoutes = require('./routes/attendance');
 const sheetsRoutes = require('./routes/sheets');
 const calendarRoutes = require('./routes/calendar');
+const oauthRoutes = require('./routes/oauth');
 
 const app = express();
 app.set('trust proxy', 1); // Cloud Run runs behind a load balancer
@@ -14,7 +16,19 @@ app.set('trust proxy', 1); // Cloud Run runs behind a load balancer
 app.use(express.json());
 app.use(cors({ origin: CONFIG.allowedOrigins }));
 
-// Rate limiting and auth on all /api routes
+// Stricter rate limit on OAuth endpoints (10 req/min)
+const oauthLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth requests, please try again later.' },
+});
+
+// OAuth routes — no auth middleware (user isn't authenticated yet)
+app.use('/api', oauthLimiter, oauthRoutes);
+
+// Rate limiting and auth on all other /api routes
 app.use('/api', apiLimiter);
 app.use('/api', auth);
 

@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const { google } = require('googleapis');
-const { makeJWT } = require('../services/googleAuth');
+const { makeJWT, makeUserClient } = require('../services/googleAuth');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
-const { persistExport } = require('../services/firestore');
+const { persistExport, getUserSheetId, setUserSheetId } = require('../services/firestore');
 
 const router = Router();
 
@@ -38,8 +38,35 @@ router.post('/save-to-sheets', async (req, res) => {
   if (!participants?.length) return res.status(400).json({ error: 'participants array is required' });
 
   try {
-    const sheetsAuth = await makeJWT(['https://www.googleapis.com/auth/spreadsheets']);
+    // Use user's OAuth token if available, otherwise fall back to service account
+    const sheetsAuth = req.user
+      ? makeUserClient(req.user.accessToken)
+      : await makeJWT(['https://www.googleapis.com/auth/spreadsheets']);
     const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
+
+    // Resolve spreadsheet ID: per-user sheet (OAuth) or shared sheet (legacy)
+    let spreadsheetId;
+    if (req.user) {
+      spreadsheetId = await getUserSheetId(req.user.email);
+      if (!spreadsheetId) {
+        // First export: create a new spreadsheet in the user's Drive
+        const createResp = await sheets.spreadsheets.create({
+          requestBody: {
+            properties: { title: 'Meet Attendance Tracker' },
+            sheets: [{ properties: { title: 'Info' } }],
+          },
+        });
+        spreadsheetId = createResp.data.spreadsheetId;
+        await setUserSheetId(req.user.email, spreadsheetId);
+        log.info('created user spreadsheet', { email: req.user.email, spreadsheetId });
+      }
+    } else {
+      spreadsheetId = CONFIG.sheetId;
+      if (!spreadsheetId) {
+        return res.status(400).json({ error: 'Sign in required to export (no shared sheet configured)' });
+      }
+    }
+
     let tabName = sanitizeTabName(clientTabName || `${meetingTitle || 'Meeting'} ${new Date(exportedAt).toISOString()}`);
 
     // Handle duplicate tab names by appending a counter
@@ -48,7 +75,7 @@ router.post('/save-to-sheets', async (req, res) => {
       try {
         const tryName = attempt === 0 ? tabName : `${tabName} (${attempt + 1})`;
         const addResp = await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: CONFIG.sheetId,
+          spreadsheetId,
           requestBody: { requests: [{ addSheet: { properties: { title: tryName } } }] },
         });
         tabName = tryName;
@@ -139,7 +166,7 @@ router.post('/save-to-sheets', async (req, res) => {
 
     const allValues = [...summary, header, ...allRows];
     await sheets.spreadsheets.values.update({
-      spreadsheetId: CONFIG.sheetId,
+      spreadsheetId,
       range: `'${tabName}'!A1`,
       valueInputOption: 'RAW',
       requestBody: { values: allValues },
@@ -175,12 +202,12 @@ router.post('/save-to-sheets', async (req, res) => {
     ];
 
     await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: CONFIG.sheetId,
+      spreadsheetId,
       requestBody: { requests: formatRequests },
     });
 
     log.info('exported to sheets', { tabName, rows: allRows.length, noShows: noShows.length });
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/edit#gid=${sheetId}`;
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${sheetId}`;
     res.json({ success: true, sheetUrl });
 
     // Fire-and-forget: audit trail for exports
