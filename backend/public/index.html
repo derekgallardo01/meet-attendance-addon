@@ -1254,8 +1254,14 @@ function startDurationTimer() {
   if (state.durationTimer) clearInterval(state.durationTimer);
   state.durationTimer = setInterval(() => {
     if (!state.startTime) return;
-    document.getElementById('meeting-duration').textContent =
-      fmtDur(state.startTime, new Date());
+    if (sim.active) {
+      // Show simulated elapsed time, not real wall-clock time
+      const m = Math.floor(sim.elapsed / 60);
+      document.getElementById('meeting-duration').textContent = m < 60 ? `${m}m` : `${Math.floor(m/60)}h ${m%60}m`;
+    } else {
+      document.getElementById('meeting-duration').textContent =
+        fmtDur(state.startTime, new Date());
+    }
   }, 1000);
 }
 
