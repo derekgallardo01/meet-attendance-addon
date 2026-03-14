@@ -117,4 +117,69 @@ async function persistExport({ meetingTitle, tabName, exportedAt, participantCou
   }
 }
 
-module.exports = { persistAttendance, persistCalendarData, persistExport };
+// ── User management (OAuth Phase 3) ──
+
+async function getUser(email) {
+  try {
+    const doc = await getDb().collection('users').doc(email.toLowerCase()).get();
+    return doc.exists ? doc.data() : null;
+  } catch (err) {
+    log.error('firestore: getUser failed', { email, error: err.message });
+    return null;
+  }
+}
+
+async function upsertUser({ email, domain, displayName, refreshToken, sheetId }) {
+  try {
+    const firestore = getDb();
+    const now = FieldValue.serverTimestamp();
+    const data = {
+      email: email.toLowerCase(),
+      domain,
+      displayName,
+      lastLoginAt: now,
+      updatedAt: now,
+      createdAt: now,
+    };
+    if (refreshToken !== undefined) data.refreshToken = refreshToken;
+    if (sheetId !== undefined) data.sheetId = sheetId;
+
+    await firestore.collection('users').doc(email.toLowerCase()).set(data, { merge: true });
+    log.info('firestore: upserted user', { email });
+  } catch (err) {
+    log.error('firestore: upsertUser failed', { email, error: err.message });
+  }
+}
+
+async function getUserSheetId(email) {
+  const user = await getUser(email);
+  return user?.sheetId || null;
+}
+
+async function setUserSheetId(email, sheetId) {
+  try {
+    await getDb().collection('users').doc(email.toLowerCase()).set(
+      { sheetId, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    log.info('firestore: set user sheetId', { email, sheetId });
+  } catch (err) {
+    log.error('firestore: setUserSheetId failed', { email, error: err.message });
+  }
+}
+
+async function updateUserTokens(email, { accessToken, tokenExpiresAt }) {
+  try {
+    await getDb().collection('users').doc(email.toLowerCase()).set(
+      { accessToken, tokenExpiresAt, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+  } catch (err) {
+    log.error('firestore: updateUserTokens failed', { email, error: err.message });
+  }
+}
+
+module.exports = {
+  persistAttendance, persistCalendarData, persistExport,
+  getUser, upsertUser, getUserSheetId, setUserSheetId, updateUserTokens,
+};

@@ -25,6 +25,9 @@
     });
   </script>
 
+  <!-- Google Identity Services for OAuth -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
 
@@ -332,6 +335,55 @@
     .badge.present { background: rgba(63,185,80,.12); color: var(--accent); border: 1px solid rgba(63,185,80,.25); }
     .badge.left    { background: rgba(125,133,144,.08); color: var(--muted); border: 1px solid var(--border); }
 
+    /* ── auth bar ────────────────────────────────────────────── */
+    #auth-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: #0f141a;
+      flex-shrink: 0;
+    }
+    #auth-bar .auth-email {
+      flex: 1;
+      color: var(--accent2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #auth-bar .auth-action {
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 0;
+      flex: none;
+    }
+    #auth-bar .auth-action:hover { color: var(--text); }
+    .btn-google {
+      background: #fff;
+      color: #3c4043;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid #dadce0;
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+    }
+    .btn-google:hover { background: #f7f8f8; }
+    .btn-google svg { width: 14px; height: 14px; flex-shrink: 0; }
+
     /* ── toast ───────────────────────────────────────────────── */
     #toast {
       position: fixed;
@@ -460,6 +512,16 @@
     </div>
   </header>
 
+  <!-- ── Auth bar ── -->
+  <div id="auth-bar">
+    <span id="auth-status">
+      <button class="btn-google" id="btn-google-signin" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+    </span>
+  </div>
+
   <!-- ── Status bar ── -->
   <div id="status-bar">
     <div class="dot" id="status-dot"></div>
@@ -528,6 +590,9 @@
 /* ═══════════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════════ */
+const GOOGLE_CLIENT_ID = '415551639811-iva2cbvlgdn8mckarc51sd3p8k3lb467.apps.googleusercontent.com';
+const OAUTH_SCOPES = 'openid email profile https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/spreadsheets';
+
 const state = {
   tracking:      false,
   conferenceId:  null,
@@ -538,7 +603,109 @@ const state = {
   durationTimer: null,
   sdk:           null,
   backendUrl:    'https://meet-attendance-backend-415551639811.us-central1.run.app/api',
+  // Auth
+  sessionToken:  null,
+  userEmail:     null,
+  signedIn:      false,
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH — Google Sign-In with OAuth
+═══════════════════════════════════════════════════════════════ */
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (state.sessionToken) h['Authorization'] = `Bearer ${state.sessionToken}`;
+  return h;
+}
+
+function signInWithGoogle() {
+  if (!window.google?.accounts?.oauth2) {
+    toast('Google Sign-In not loaded yet');
+    return;
+  }
+  const client = google.accounts.oauth2.initCodeClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: OAUTH_SCOPES,
+    ux_mode: 'popup',
+    callback: handleAuthCode,
+  });
+  client.requestCode();
+}
+
+async function handleAuthCode(response) {
+  if (response.error) {
+    console.error('OAuth error:', response.error);
+    toast('Sign-in cancelled');
+    return;
+  }
+
+  try {
+    toast('Signing in…');
+    const res = await fetch(`${state.backendUrl}/oauth/exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: response.code }),
+    });
+    if (!res.ok) throw new Error(`Auth failed: ${res.status}`);
+    const data = await res.json();
+
+    state.sessionToken = data.sessionToken;
+    state.userEmail = data.email;
+    state.signedIn = true;
+    updateAuthUI();
+    toast('Signed in as ' + data.email);
+  } catch (err) {
+    console.error('Auth exchange failed:', err);
+    toast('Sign-in failed: ' + err.message);
+  }
+}
+
+async function signOut() {
+  try {
+    await fetch(`${state.backendUrl}/oauth/revoke`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+  } catch (e) { /* ignore */ }
+
+  state.sessionToken = null;
+  state.userEmail = null;
+  state.signedIn = false;
+  updateAuthUI();
+  toast('Signed out');
+}
+
+function updateAuthUI() {
+  const bar = document.getElementById('auth-status');
+  if (state.signedIn) {
+    bar.innerHTML = `
+      <span class="auth-email">${escHtml(state.userEmail)}</span>
+      <button class="auth-action" onclick="signOut()">Sign out</button>
+    `;
+  } else {
+    bar.innerHTML = `
+      <button class="btn-google" id="btn-google-signin" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 48 48" width="14" height="14"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+    `;
+  }
+}
+
+async function authFetch(url, opts = {}) {
+  opts.headers = { ...authHeaders(), ...(opts.headers || {}) };
+  const res = await fetch(url, opts);
+  if (res.status === 401 && state.signedIn) {
+    // Session expired — sign out and prompt re-auth
+    state.sessionToken = null;
+    state.userEmail = null;
+    state.signedIn = false;
+    updateAuthUI();
+    toast('Session expired — please sign in again');
+    throw new Error('Session expired');
+  }
+  return res;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    MEET ADD-ONS SDK INIT
@@ -654,9 +821,8 @@ async function refreshAttendance() {
 
     if (state.conferenceId) {
       // Real path: call your backend
-      const res = await fetch(
-        `${state.backendUrl}/attendance?conferenceId=${encodeURIComponent(state.conferenceId)}`,
-        { headers: { 'Content-Type': 'application/json' } }
+      const res = await authFetch(
+        `${state.backendUrl}/attendance?conferenceId=${encodeURIComponent(state.conferenceId)}`
       );
       if (!res.ok) throw new Error(`Backend error ${res.status}`);
       data = await res.json();
@@ -812,7 +978,7 @@ async function saveToSheets() {
 
   toast('Checking Calendar…');
   try {
-    const calRes = await fetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
+    const calRes = await authFetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
     const calData = calRes.ok ? await calRes.json() : { isScheduled: false, attendees: [] };
 
     // Use calendar event title if available
@@ -998,9 +1164,8 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
 
   try {
     toast('Saving to Sheets…');
-    const res = await fetch(`${state.backendUrl}/save-to-sheets`, {
+    const res = await authFetch(`${state.backendUrl}/save-to-sheets`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(`${res.status}`);
