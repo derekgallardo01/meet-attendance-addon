@@ -1074,9 +1074,10 @@ function mergeParticipants(incoming = []) {
         // Meet API lags on rejoins — require 3 consecutive "not present" polls
         // (~ 90 seconds) before marking as Left to avoid false negatives
         existing._leftStreak = (existing._leftStreak || 0) + 1;
+        // Show notification early (1st poll), but delay status change (3rd poll)
+        if (existing._leftStreak === 1) showActivityNote(p.displayName, 'left');
         if (existing._leftStreak >= 3) {
           existing.present = false;
-          showActivityNote(p.displayName, 'left');
         }
       }
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
