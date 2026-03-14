@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Attendance Tracker · Meet Add-on</title>
+
+  <!-- Meet Add-ons SDK — load dynamically so we can detect failures -->
+  <script>
+    window._meetSdkReady = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js';
+      s.onload = () => {
+        console.log('[Attendance] SDK script loaded, window.meet =', typeof window.meet);
+        resolve(true);
+      };
+      s.onerror = () => {
+        console.warn('[Attendance] SDK script failed to load — demo mode');
+        resolve(false);
+      };
+      document.head.appendChild(s);
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── tokens ──────────────────────────────────────────────── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #21262d;
+      --accent:    #3fb950;
+      --accent2:   #58a6ff;
+      --warn:      #f0883e;
+      --text:      #e6edf3;
+      --muted:     #7d8590;
+      --radius:    10px;
+      --font-mono: 'DM Mono', monospace;
+      --font-sans: 'Sora', sans-serif;
+    }
+
+    /* ── reset ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── header ──────────────────────────────────────────────── */
+    header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      width: 28px; height: 28px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo svg { width: 16px; height: 16px; fill: #0d1117; }
+
+    .header-info { flex: 1; min-width: 0; }
+
+    .app-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    #meeting-title {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    /* ── status bar ──────────────────────────────────────────── */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      flex-shrink: 0;
+      background: #0f141a;
+      min-height: 36px;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .dot.active  { background: var(--accent);  box-shadow: 0 0 6px var(--accent); }
+    .dot.loading { background: var(--warn);     animation: pulse 1s ease-in-out infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    #status-text { flex: 1; }
+
+    #last-refresh {
+      color: #3d444d;
+      font-size: 10px;
+    }
+
+    /* ── controls ────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 5px;
+      padding: 10px 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    button {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      padding: 6px 10px;
+      transition: all .15s;
+      letter-spacing: .02em;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      flex: 1;
+      justify-content: center;
+    }
+
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #4ac161;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(63,185,80,.3);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .btn-danger {
+      background: var(--surface);
+      color: var(--warn);
+      border: 1px solid var(--border);
+    }
+    .btn-danger:hover:not(:disabled) {
+      border-color: var(--warn);
+      background: rgba(240,136,62,.08);
+    }
+
+    /* ── summary chips ───────────────────────────────────────── */
+    .summary-row {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+      flex-shrink: 0;
+    }
+
+    .chip {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .chip-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    .chip-value {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .chip-value.green { color: var(--accent); }
+    .chip-value.blue  { color: var(--accent2); }
+
+    /* ── participant list ────────────────────────────────────── */
+    .list-header {
+      padding: 0 16px 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .list-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    #participant-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    #participant-list::-webkit-scrollbar { width: 4px; }
+    #participant-list::-webkit-scrollbar-track { background: transparent; }
+    #participant-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── empty / error states ────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      padding: 32px 0;
+      font-size: 12px;
+      text-align: center;
+    }
+    .empty-state svg { opacity: .25; }
+
+    /* ── participant card ────────────────────────────────────── */
+    .participant-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn .18s ease-out;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .participant-card.left {
+      opacity: .45;
+      border-style: dashed;
+    }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1f3a2a, #0d1117);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .participant-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .participant-meta {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .badge.present { background: rgba(63,185,80,.12); color: var(--accent); border: 1px solid rgba(63,185,80,.25); }
+    .badge.left    { background: rgba(125,133,144,.08); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      padding: 8px 18px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      transition: transform .3s ease;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Matching Modal ─────────────────────────────────────── */
+    #match-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #match-modal.open { display: flex; flex-direction: column; }
+    .modal-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+    }
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 4px;
+    }
+    .modal-subtitle {
+      font-size: 11px;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+    .match-row {
+      display: grid;
+      grid-template-columns: 1fr 24px 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .match-participant {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e6edf3;
+    }
+    .match-participant .sub { font-size: 10px; color: #8b949e; margin-top: 2px; }
+    .match-arrow { text-align: center; color: #8b949e; font-size: 14px; }
+    .match-select {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e6edf3;
+      width: 100%;
+      cursor: pointer;
+    }
+    .match-select:focus { outline: none; border-color: #238636; }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+    .modal-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .unmatched-section { margin-top: 16px; }
+    .match-override {
+      background: #0d1117;
+      border: 1px dashed #444c56;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: #e6edf3;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .match-override::placeholder { color: #484f58; }
+    .match-override:focus { outline: none; border-color: #58a6ff; }
+    .unmatched-attendee {
+      font-size: 11px;
+      color: #8b949e;
+      padding: 4px 0;
+      border-bottom: 1px solid #21262d;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/>
+      </svg>
+    </div>
+    <div class="header-info">
+      <div class="app-title">Attendance</div>
+      <div id="meeting-title">Not in a meeting</div>
+    </div>
+  </header>
+
+  <!-- ── Status bar ── -->
+  <div id="status-bar">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Initializing…</span>
+    <span id="last-refresh"></span>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls">
+    <button class="btn-primary" id="btn-start" onclick="startTracking()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Start
+    </button>
+    <button class="btn-secondary" id="btn-refresh" onclick="refreshAttendance()" disabled>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Sync
+    </button>
+    <button class="btn-secondary" id="btn-sheets" onclick="saveToSheets()" disabled>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Sheet
+    </button>
+  </div>
+
+  <!-- ── Summary ── -->
+  <div class="summary-row">
+    <div class="chip">
+      <div class="chip-label">Present</div>
+      <div class="chip-value green" id="count-present">—</div>
+    </div>
+    <div class="chip">
+      <div class="chip-label">Total Seen</div>
+      <div class="chip-value blue" id="count-total">—</div>
+    </div>
+    <div class="chip">
+      <div class="chip-label">Duration</div>
+      <div class="chip-value" id="meeting-duration">—</div>
+    </div>
+  </div>
+
+  <!-- ── Participant list ── -->
+  <div class="list-header">Participants</div>
+  <div id="participant-list">
+    <div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span>Press <strong>Start</strong> to begin tracking</span>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  tracking:      false,
+  conferenceId:  null,
+  meetingTitle:  'Unknown Meeting',
+  startTime:     null,
+  participants:  new Map(),   // displayName → { joinTime, leaveTime, present }
+  refreshTimer:  null,
+  sdk:           null,
+  backendUrl:    '/api',
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   MEET ADD-ONS SDK INIT
+═══════════════════════════════════════════════════════════════ */
+async function waitForMeet() {
+  const loaded = await window._meetSdkReady;
+  if (!loaded) return false;
+  // Give window.meet a moment to be set after script runs
+  for (let i = 0; i < 10; i++) {
+    if (window.meet?.addon?.createAddonSession) return true;
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return false;
+}
+
+async function initSDK() {
+  console.log('[Attendance] initSDK starting, window.meet =', typeof window.meet);
+  try {
+    const ready = await waitForMeet();
+    console.log('[Attendance] waitForMeet result:', ready, 'window.meet =', typeof window.meet);
+
+    if (!ready) {
+      // Not inside Meet — show demo data
+      document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+      setStatus('loading', 'Demo mode — open inside Meet to connect');
+      return;
+    }
+
+    const session = await window.meet.addon.createAddonSession({
+      cloudProjectNumber: '415551639811',
+    });
+
+    state.sdk = session;
+
+    // Create the side panel client — required for side panel add-ons
+    const sidePanelClient = await session.createSidePanelClient();
+
+    // Get meeting info — MeetingInfo has meetingId and meetingCode
+    const meetingInfo = await sidePanelClient.getMeetingInfo();
+    console.log('[Attendance] meetingInfo keys:', Object.keys(meetingInfo));
+    console.log('[Attendance] meetingInfo:', JSON.stringify(meetingInfo));
+
+    // meetingCode is the meeting code e.g. "abc-defg-hij"
+    // meetingId is the globally unique ID used by the REST API
+    state.conferenceId = meetingInfo.meetingCode || meetingInfo.meetingId || null;
+    state.meetingTitle = meetingInfo.meetingTitle || meetingInfo.title || 'Google Meet';
+
+    document.getElementById('meeting-title').textContent = state.meetingTitle;
+    setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
+
+    // Auto-start tracking so rejoining does not require clicking Start again
+    if (state.conferenceId) { startTracking(); }
+
+  } catch (err) {
+    console.error('[Attendance] SDK error:', err.message);
+    document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+    setStatus('loading', 'SDK error — see console');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRACKING CONTROL
+═══════════════════════════════════════════════════════════════ */
+function startTracking() {
+  state.tracking  = true;
+  state.startTime = new Date();
+  state.participants.clear();
+
+  document.getElementById('btn-start').disabled  = true;
+  document.getElementById('btn-refresh').disabled = false;
+  document.getElementById('btn-sheets').disabled  = false;
+
+  setStatus('active', 'Tracking attendance…');
+  startDurationTimer();
+  refreshAttendance();
+
+  // Auto-sync every 30s with countdown display
+  state.syncCountdown = 30;
+  clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
+
+  state.refreshTimer = setInterval(() => {
+    state.syncCountdown = 30;
+    refreshAttendance();
+  }, 30_000);
+
+  state.countdownTimer = setInterval(() => {
+    state.syncCountdown = Math.max(0, state.syncCountdown - 1);
+    updateLastRefresh();
+  }, 1_000);
+}
+
+function stopTracking() {
+  state.tracking = false;
+  clearInterval(state.refreshTimer);
+  clearInterval(state.countdownTimer);
+  setStatus('idle', 'Tracking stopped');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FETCH ATTENDANCE FROM YOUR BACKEND
+   Your backend calls the Meet REST API (participants +
+   participantSessions) using a service account and returns JSON.
+   Shape expected:  { participants: [{ displayName, joinTime, leaveTime, present }] }
+═══════════════════════════════════════════════════════════════ */
+async function refreshAttendance() {
+  if (!state.tracking) return;
+  setStatus('loading', 'Refreshing…');
+
+  try {
+    let data;
+
+    if (state.conferenceId) {
+      // Real path: call your backend
+      const res = await fetch(
+        `${state.backendUrl}/attendance?conferenceId=${encodeURIComponent(state.conferenceId)}`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      if (!res.ok) throw new Error(`Backend error ${res.status}`);
+      data = await res.json();
+    } else {
+      // Dev/preview fallback — synthetic demo data
+      data = demoParticipants();
+    }
+
+    const hadParticipantsBefore = state.participants.size > 0;
+    mergeParticipants(data.participants);
+    renderList();
+    updateSummary();
+    updateLastRefresh();
+    setStatus('active', `Tracking · ${state.participants.size} seen`);
+
+    // Auto-export removed — use the Sheet button manually
+
+  } catch (err) {
+    console.error(err);
+    setStatus('loading', `Error: ${err.message}`);
+    toast('⚠ Could not reach backend');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MERGE INCOMING PARTICIPANTS INTO STATE MAP
+═══════════════════════════════════════════════════════════════ */
+function mergeParticipants(incoming = []) {
+  // Mark everyone currently present as potentially gone
+  for (const [, p] of state.participants) {
+    if (p.present) p.present = false;
+  }
+
+  for (const p of incoming) {
+    // Use participantId from API (unique per person), fall back to displayName for demo mode
+    const key = p.participantId || p.displayName;
+    if (!state.participants.has(key)) {
+      state.participants.set(key, {
+        participantId:  p.participantId || null,
+        displayName:    p.displayName,
+        email:          p.email || '',
+        joinTime:       p.joinTime ? new Date(p.joinTime) : null,
+        trackedJoinTime: new Date(), // always record when we first saw them
+        leaveTime:      p.leaveTime ? new Date(p.leaveTime) : null,
+        present:        p.present ?? true,
+        sessions:       1,
+      });
+    } else {
+      const existing = state.participants.get(key);
+      existing.present   = p.present ?? true;
+      existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
+      if (p.present) existing.sessions++;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════════ */
+function renderList() {
+  const container = document.getElementById('participant-list');
+
+  if (state.participants.size === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+        </svg>
+        <span>No participants found yet</span>
+      </div>`;
+    return;
+  }
+
+  // Sort: present first, then by join time
+  const sorted = [...state.participants.values()].sort((a, b) => {
+    if (a.present !== b.present) return b.present - a.present;
+    return (a.joinTime || 0) - (b.joinTime || 0);
+  });
+
+  container.innerHTML = sorted.map(p => {
+    const initials = p.displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const joinStr  = p.joinTime ? fmtTime(p.joinTime) : '—';
+    const durStr   = p.joinTime ? fmtDur(p.joinTime, p.leaveTime || new Date()) : '';
+    return `
+      <div class="participant-card ${p.present ? '' : 'left'}">
+        <div class="avatar">${initials}</div>
+        <div>
+          <div class="participant-name">${escHtml(p.displayName)}</div>
+          <div class="participant-meta">Joined ${joinStr}${durStr ? ' · ' + durStr : ''}</div>
+        </div>
+        <span class="badge ${p.present ? 'present' : 'left'}">${p.present ? 'Present' : 'Left'}</span>
+      </div>`;
+  }).join('');
+}
+
+function updateSummary() {
+  const present = [...state.participants.values()].filter(p => p.present).length;
+  document.getElementById('count-present').textContent = present;
+  document.getElementById('count-total').textContent   = state.participants.size;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════════════════════ */
+
+
+async function saveToSheets() {
+  if (!state.participants.size) { toast('No data yet'); return; }
+
+  // Note if meeting is still active — export anyway, just warn
+  const anyPresent = [...state.participants.values()].some(p => p.present);
+  if (anyPresent) toast('⚠ Meeting still active — exporting current data…');
+
+  toast('Checking Calendar…');
+  try {
+    const calRes = await fetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
+    const calData = calRes.ok ? await calRes.json() : { isScheduled: false, attendees: [] };
+
+    if (calData.isScheduled && calData.attendees.length > 0) {
+      // Scheduled meeting — show matching UI
+      openMatchModal(calData.attendees);
+    } else {
+      // Instant meeting — export directly
+      await doExportToSheets({});
+    }
+  } catch (err) {
+    console.warn('Calendar check failed, exporting directly:', err.message);
+    await doExportToSheets({});
+  }
+}
+
+function openMatchModal(attendees) {
+  state.calendarAttendees = attendees;
+
+  // Auto-match: exact name, or first name match
+  const emailMap = {}; // displayName -> email
+  const usedEmails = new Set();
+
+  for (const p of state.participants.values()) {
+    const pName = p.displayName.toLowerCase().trim();
+    // Try exact match
+    let match = attendees.find(a => a.displayName.toLowerCase().trim() === pName);
+    // Try first name match
+    if (!match) {
+      const pFirst = pName.split(' ')[0];
+      match = attendees.find(a => a.displayName.toLowerCase().split(' ')[0] === pFirst && !usedEmails.has(a.email));
+    }
+    if (match) {
+      emailMap[p.displayName] = match.email;
+      usedEmails.add(match.email);
+    }
+  }
+  state.autoEmailMap = emailMap;
+
+  // Build match rows
+  const rowsEl = document.getElementById('match-rows');
+  rowsEl.innerHTML = '';
+
+  const attendeeOptions = attendees.map(a =>
+    `<option value="${a.email}">${a.displayName} (${a.email})</option>`
+  ).join('');
+
+  for (const p of state.participants.values()) {
+    const autoEmail = emailMap[p.displayName] || '';
+    const row = document.createElement('div');
+    row.className = 'match-row';
+    row.innerHTML = `
+      <div class="match-participant">
+        <div>${p.displayName}</div>
+        <div class="sub">${p.present ? 'Present' : 'Left'}</div>
+      </div>
+      <div class="match-arrow">→</div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+        <select class="match-select" data-participant="${p.displayName}" onchange="handleMatchSelectChange(this)">
+          <option value="">— No match —</option>
+          ${attendees.map(a =>
+            `<option value="${a.email}" ${a.email === autoEmail ? 'selected' : ''}>${a.displayName} (${a.email})</option>`
+          ).join('')}
+        </select>
+        <input
+          class="match-override"
+          type="email"
+          placeholder="Or type email manually…"
+          data-participant="${p.displayName}"
+          style="display:${autoEmail ? 'none' : 'block'}"
+        />
+      </div>
+    `;
+    rowsEl.appendChild(row);
+  }
+
+  // Show unmatched attendees
+  const matchedEmails = new Set(Object.values(emailMap));
+  const unmatched = attendees.filter(a => !matchedEmails.has(a.email));
+  const unmatchedSection = document.getElementById('unmatched-section');
+  if (unmatched.length > 0) {
+    unmatchedSection.style.display = 'block';
+    document.getElementById('unmatched-list').innerHTML = unmatched.map(a =>
+      `<div class="unmatched-attendee">${a.displayName} — ${a.email}</div>`
+    ).join('');
+  } else {
+    unmatchedSection.style.display = 'none';
+  }
+
+  document.getElementById('match-modal').classList.add('open');
+}
+
+function closeMatchModal() {
+  document.getElementById('match-modal').classList.remove('open');
+}
+
+function handleMatchSelectChange(sel) {
+  // If a dropdown match is selected, hide the manual override; if cleared, show it
+  const wrapper = sel.closest('div');
+  const override = wrapper.querySelector('.match-override');
+  if (override) {
+    override.style.display = sel.value ? 'none' : 'block';
+    if (sel.value) override.value = '';
+  }
+}
+
+async function confirmMatchAndExport() {
+  // Build email map — override input takes priority if dropdown is "No match"
+  const emailMap = {};
+  document.querySelectorAll('.match-select').forEach(sel => {
+    const participant = sel.dataset.participant;
+    const wrapper = sel.closest('div');
+    const override = wrapper ? wrapper.querySelector('.match-override') : null;
+    const overrideVal = override ? override.value.trim() : '';
+    if (overrideVal) {
+      emailMap[participant] = overrideVal;
+    } else if (sel.value) {
+      emailMap[participant] = sel.value;
+    }
+  });
+  closeMatchModal();
+  await doExportToSheets(emailMap);
+}
+
+async function doExportToSheets(emailMap) {
+  const now = new Date();
+  const tabName = `${state.meetingTitle || 'Google Meet'} ${now.toLocaleDateString('en-US')} ${now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
+
+  const payload = {
+    meetingTitle: state.meetingTitle,
+    tabName,
+    conferenceId: state.conferenceId,
+    exportedAt:   now.toISOString(),
+    participants: [...state.participants.values()].map(p => {
+      const joinTime  = p.joinTime || p.trackedJoinTime || new Date();
+      const leaveTime = p.leaveTime || null;
+      return {
+        displayName:  p.displayName,
+        email:        emailMap[p.displayName] || p.email || '',
+        joinTimeISO:  joinTime.toISOString(),
+        leaveTimeISO: leaveTime ? leaveTime.toISOString() : null,
+        present:      p.present,
+        sessions:     p.sessions,
+      };
+    }),
+  };
+
+  try {
+    toast('Saving to Sheets…');
+    const res = await fetch(`${state.backendUrl}/save-to-sheets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const { sheetUrl } = await res.json();
+    toast('✓ Saved to Sheets');
+    const btn = document.getElementById('btn-sheets');
+    btn.textContent = '✓ Exported';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = '⬜ Sheet'; btn.disabled = false; }, 4000);
+    if (sheetUrl) window.open(sheetUrl, '_blank');
+  } catch (err) {
+    toast(`⚠ Sheets error: ${err.message}`);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DURATION TIMER
+═══════════════════════════════════════════════════════════════ */
+function startDurationTimer() {
+  setInterval(() => {
+    if (!state.startTime) return;
+    document.getElementById('meeting-duration').textContent =
+      fmtDur(state.startTime, new Date());
+  }, 1000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS HELPERS
+═══════════════════════════════════════════════════════════════ */
+function setStatus(type, text) {
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot ' + (type === 'active' ? 'active' : type === 'loading' ? 'loading' : '');
+  document.getElementById('status-text').textContent = text;
+}
+
+function updateLastRefresh() {
+  const tracking = state.tracking;
+  const countdown = state.syncCountdown ?? 30;
+  const timeStr = fmtTime(new Date());
+  document.getElementById('last-refresh').textContent = tracking
+    ? `updated ${timeStr} · next in ${countdown}s`
+    : `updated ${timeStr}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DEMO DATA (used when running outside Meet)
+═══════════════════════════════════════════════════════════════ */
+function demoParticipants() {
+  const base = Date.now() - 900_000;
+  return { participants: [
+    { displayName: 'Alex Rivera',     joinTime: new Date(base),           leaveTime: null,                  present: true  },
+    { displayName: 'Jordan Kim',      joinTime: new Date(base + 120_000), leaveTime: null,                  present: true  },
+    { displayName: 'Sam Okonkwo',     joinTime: new Date(base + 60_000),  leaveTime: new Date(base + 600_000), present: false },
+    { displayName: 'Morgan Schultz',  joinTime: new Date(base + 300_000), leaveTime: null,                  present: true  },
+    { displayName: 'Taylor Nguyen',   joinTime: new Date(base + 420_000), leaveTime: null,                  present: true  },
+  ]};
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTIL
+═══════════════════════════════════════════════════════════════ */
+function fmtTime(d) {
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDur(start, end) {
+  const m = Math.floor((end - start) / 60000);
+  if (m < 60) return `${m}m`;
+  return `${Math.floor(m/60)}h ${m%60}m`;
+}
+
+function isoFmt(d) { return d.toISOString(); }
+
+function datestamp() {
+  return new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  setStatus('loading', 'Connecting to Meet…');
+  initSDK();
+});
+</script>
+
+  <!-- ── Matching Modal ── -->
+  <div id="match-modal">
+    <div class="modal-box">
+      <div class="modal-title">Match Participants to Invitees</div>
+      <div class="modal-subtitle">Auto-matched where possible. Manually assign emails for the rest.</div>
+      <div class="modal-section-label">Meet Participants → Calendar Invitee</div>
+      <div id="match-rows"></div>
+      <div class="unmatched-section" id="unmatched-section" style="display:none">
+        <div class="modal-section-label">Calendar invitees not matched</div>
+        <div id="unmatched-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeMatchModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmMatchAndExport()">✓ Confirm & Export to Sheets</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
