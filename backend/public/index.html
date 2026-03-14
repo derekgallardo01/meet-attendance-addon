@@ -766,6 +766,12 @@ async function saveToSheets() {
     const calRes = await fetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
     const calData = calRes.ok ? await calRes.json() : { isScheduled: false, attendees: [] };
 
+    // Use calendar event title if available
+    if (calData.isScheduled && calData.eventTitle) {
+      state.meetingTitle = calData.eventTitle;
+      document.getElementById('meeting-title').textContent = calData.eventTitle;
+    }
+
     if (calData.isScheduled && calData.attendees.length > 0) {
       // Scheduled meeting — show matching UI
       openMatchModal(calData.attendees);
