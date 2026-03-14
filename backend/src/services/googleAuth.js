@@ -54,6 +54,8 @@ async function getOAuthClient() {
 
 async function exchangeCode(code) {
   const client = await getOAuthClient();
+  // GIS popup mode uses 'postmessage' as the redirect URI
+  client.redirectUri = 'postmessage';
   const { tokens } = await client.getToken(code);
   log.info('oauth: code exchanged', { hasRefreshToken: !!tokens.refresh_token });
   return tokens;
