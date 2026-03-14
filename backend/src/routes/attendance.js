@@ -50,27 +50,19 @@ router.get('/attendance', async (req, res) => {
         const sessions = await meetGetAll(`${p.name}/participantSessions`, token, 'participantSessions');
         const joinTimes  = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
         const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
-        const present = sessions.some(s => !s.endTime);
-        log.info('participant sessions', {
-          name: p.user?.displayName || p.signedinUser?.displayName,
-          sessionCount: sessions.length,
-          present,
-          sessions: sessions.map(s => ({ start: s.startTime, end: s.endTime || 'ACTIVE' })),
-        });
         return {
           participantId: p.name,
           displayName:   p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
           email:         p.user?.email || p.signedinUser?.email || '',
           joinTime:      joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
           leaveTime:     leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
-          present,
+          present:       sessions.some(s => !s.endTime),
           sessions:      sessions.length,
-          _debugSessions: sessions.map(s => ({ start: s.startTime, end: s.endTime || null })),
         };
       })
     );
 
-    res.json({ participants, _debug: { recordName: conferenceRecord.name, recordCount: records.length } });
+    res.json({ participants });
 
     // Fire-and-forget: persist to Firestore for analytics
     persistAttendance(conferenceId, conferenceRecord.name, participants);

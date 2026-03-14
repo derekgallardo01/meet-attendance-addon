@@ -680,9 +680,15 @@ function mergeParticipants(incoming = []) {
     if (p.present) p.present = false;
   }
 
+  const now = Date.now();
   for (const p of incoming) {
     // Use participantId from API (unique per person), fall back to displayName for demo mode
     const key = p.participantId || p.displayName;
+    // Meet API has a lag — treat participants whose last session ended
+    // within 2 minutes as potentially still present
+    const apiPresent = p.present ?? true;
+    const leaveRecent = p.leaveTime && (now - new Date(p.leaveTime).getTime()) < 120_000;
+    const isPresent = apiPresent || leaveRecent;
     if (!state.participants.has(key)) {
       state.participants.set(key, {
         participantId:  p.participantId || null,
@@ -691,14 +697,14 @@ function mergeParticipants(incoming = []) {
         joinTime:       p.joinTime ? new Date(p.joinTime) : null,
         trackedJoinTime: new Date(), // always record when we first saw them
         leaveTime:      p.leaveTime ? new Date(p.leaveTime) : null,
-        present:        p.present ?? true,
+        present:        isPresent,
         sessions:       1,
       });
     } else {
       const existing = state.participants.get(key);
-      existing.present   = p.present ?? true;
+      existing.present   = isPresent;
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
-      if (p.present) existing.sessions++;
+      if (isPresent) existing.sessions++;
     }
   }
 }
