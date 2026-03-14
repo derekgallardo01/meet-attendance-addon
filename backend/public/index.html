@@ -704,7 +704,7 @@ function mergeParticipants(incoming = []) {
       const existing = state.participants.get(key);
       existing.present   = isPresent;
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
-      if (isPresent) existing.sessions++;
+      existing.sessions  = p.sessions || existing.sessions;
     }
   }
 }
