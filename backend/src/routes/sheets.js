@@ -36,14 +36,16 @@ router.post('/save-to-sheets', async (req, res) => {
     let tabName = sanitizeTabName(clientTabName || `${meetingTitle || 'Meeting'} ${new Date(exportedAt).toISOString()}`);
 
     // Handle duplicate tab names by appending a counter
+    let sheetId = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
         const tryName = attempt === 0 ? tabName : `${tabName} (${attempt + 1})`;
-        await sheets.spreadsheets.batchUpdate({
+        const addResp = await sheets.spreadsheets.batchUpdate({
           spreadsheetId: CONFIG.sheetId,
           requestBody: { requests: [{ addSheet: { properties: { title: tryName } } }] },
         });
         tabName = tryName;
+        sheetId = addResp.data.replies[0].addSheet.properties.sheetId;
         break;
       } catch (e) {
         if (e.message?.includes('already exists') && attempt < 4) continue;
@@ -104,15 +106,50 @@ router.post('/save-to-sheets', async (req, res) => {
 
     const allRows = [...rows, ...noShows];
 
+    const allValues = [...summary, header, ...allRows];
     await sheets.spreadsheets.values.update({
       spreadsheetId: CONFIG.sheetId,
       range: `'${tabName}'!A1`,
       valueInputOption: 'RAW',
-      requestBody: { values: [...summary, header, ...allRows] },
+      requestBody: { values: allValues },
+    });
+
+    // Format the sheet: bold summary labels & header row, auto-resize columns
+    const headerRowIndex = summary.length; // 0-based row index of the header
+    const formatRequests = [
+      // Bold summary labels (column A, rows 0 to summary.length-1)
+      { repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: summary.length - 1, startColumnIndex: 0, endColumnIndex: 1 },
+        cell: { userEnteredFormat: { textFormat: { bold: true } } },
+        fields: 'userEnteredFormat.textFormat.bold',
+      }},
+      // Bold + background on header row
+      { repeatCell: {
+        range: { sheetId, startRowIndex: headerRowIndex, endRowIndex: headerRowIndex + 1, startColumnIndex: 0, endColumnIndex: header.length },
+        cell: { userEnteredFormat: {
+          textFormat: { bold: true },
+          backgroundColor: { red: 0.9, green: 0.9, blue: 0.9 },
+        }},
+        fields: 'userEnteredFormat(textFormat.bold,backgroundColor)',
+      }},
+      // Freeze header row
+      { updateSheetProperties: {
+        properties: { sheetId, gridProperties: { frozenRowCount: headerRowIndex + 1 } },
+        fields: 'gridProperties.frozenRowCount',
+      }},
+      // Auto-resize all columns
+      { autoResizeDimensions: {
+        dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: header.length },
+      }},
+    ];
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: CONFIG.sheetId,
+      requestBody: { requests: formatRequests },
     });
 
     log.info('exported to sheets', { tabName, rows: allRows.length, noShows: noShows.length });
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}`;
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/edit#gid=${sheetId}`;
     res.json({ success: true, sheetUrl });
 
     // Fire-and-forget: audit trail for exports
