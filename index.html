@@ -769,11 +769,11 @@ async function saveToSheets() {
       openMatchModal(calData.attendees);
     } else {
       // Instant meeting — export directly
-      await doExportToSheets({});
+      await doExportToSheets({}, []);
     }
   } catch (err) {
     console.warn('Calendar check failed, exporting directly:', err.message);
-    await doExportToSheets({});
+    await doExportToSheets({}, []);
   }
 }
 
@@ -882,10 +882,10 @@ async function confirmMatchAndExport() {
     }
   });
   closeMatchModal();
-  await doExportToSheets(emailMap);
+  await doExportToSheets(emailMap, state.calendarAttendees || []);
 }
 
-async function doExportToSheets(emailMap) {
+async function doExportToSheets(emailMap, calendarAttendees = []) {
   const now = new Date();
   const tabName = `${state.meetingTitle || 'Google Meet'} ${now.toLocaleDateString('en-US')} ${now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
 
@@ -894,6 +894,8 @@ async function doExportToSheets(emailMap) {
     tabName,
     conferenceId: state.conferenceId,
     exportedAt:   now.toISOString(),
+    meetingStartTime: state.startTime ? state.startTime.toISOString() : null,
+    calendarAttendees,
     participants: [...state.participants.values()].map(p => {
       const joinTime  = p.joinTime || p.trackedJoinTime || new Date();
       const leaveTime = p.leaveTime || null;
