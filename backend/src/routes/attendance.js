@@ -49,24 +49,9 @@ async function enrichEmails(participants) {
           p.email = resp.data.primaryEmail;
         }
       } catch (e) {
-        log.info('directory id lookup miss, trying name search', { userId, error: e.message });
-        // Fallback: search by display name
-        try {
-          const searchResp = await directory.users.list({
-            customer: 'my_customer',
-            query: `name:'${p.displayName}'`,
-            maxResults: 1,
-          });
-          const user = searchResp.data.users?.[0];
-          if (user?.primaryEmail) {
-            p.email = user.primaryEmail;
-            log.info('directory name search hit', { displayName: p.displayName, email: user.primaryEmail });
-          } else {
-            log.info('directory name search miss', { displayName: p.displayName });
-          }
-        } catch (e2) {
-          log.warn('directory name search failed', { displayName: p.displayName, error: e2.message });
-        }
+        // User not in this Workspace directory (external/personal account) — skip name search
+        // to avoid false matches (e.g., "Derek" matching the wrong Workspace user)
+        log.info('directory id lookup miss — external user', { userId, displayName: p.displayName, error: e.message });
       }
     }));
 
