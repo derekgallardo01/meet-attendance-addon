@@ -708,7 +708,12 @@ function mergeParticipants(incoming = []) {
       });
     } else {
       const existing = state.participants.get(key);
-      if (apiPresent) {
+      const newSessions = p.sessions || existing.sessions;
+      // If session count went up, they rejoined — mark present immediately
+      if (newSessions > existing.sessions) {
+        existing.present = true;
+        existing._leftStreak = 0;
+      } else if (apiPresent) {
         existing.present = true;
         existing._leftStreak = 0;
       } else if (existing.present) {
@@ -721,7 +726,7 @@ function mergeParticipants(incoming = []) {
       }
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
       existing.email     = p.email || existing.email;
-      existing.sessions  = p.sessions || existing.sessions;
+      existing.sessions  = newSessions;
     }
   }
 
