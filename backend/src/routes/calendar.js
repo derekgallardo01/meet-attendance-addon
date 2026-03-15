@@ -77,7 +77,13 @@ router.get('/calendar-attendees', async (req, res) => {
         status:      a.responseStatus,
       }));
 
-    res.json({ isScheduled: true, eventTitle: matchedEvent.summary || 'Scheduled Meeting', attendees });
+    res.json({
+      isScheduled: true,
+      eventTitle: matchedEvent.summary || 'Scheduled Meeting',
+      eventStart: matchedEvent.start?.dateTime || matchedEvent.start?.date || null,
+      eventEnd: matchedEvent.end?.dateTime || matchedEvent.end?.date || null,
+      attendees,
+    });
 
     // Fire-and-forget: store title + invited attendees for analytics
     const domain = req.user?.domain || CONFIG.allowedDomains?.[0] || 'default';

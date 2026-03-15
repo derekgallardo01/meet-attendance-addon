@@ -34,7 +34,7 @@ function fmtRsvp(status) {
 }
 
 router.post('/save-to-sheets', async (req, res) => {
-  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime, conferenceId, timezone } = req.body;
+  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime, meetingType, eventStart, eventEnd, conferenceId, timezone } = req.body;
   if (!participants?.length) return res.status(400).json({ error: 'participants array is required' });
 
   try {
@@ -159,9 +159,20 @@ router.post('/save-to-sheets', async (req, res) => {
     const totalAttended = participants.length;
     const attendanceRate = totalInvited > 0 ? Math.round((totalAttended / totalInvited) * 100) + '%' : 'N/A';
 
+    // Format scheduled time range
+    const fmtTimeOnly = (iso) => {
+      if (!iso) return '';
+      return new Date(iso).toLocaleString('en-US', { timeZone: tz, timeStyle: 'short' }) + ' ' + tzAbbr;
+    };
+    const scheduledRange = eventStart && eventEnd
+      ? `${fmtTimeOnly(eventStart)} – ${fmtTimeOnly(eventEnd)}`
+      : null;
+
     const summary = [
       ['Meeting', meetingTitle || 'Google Meet'],
       ['Meeting ID', conferenceId || 'N/A'],
+      ['Type', meetingType === 'scheduled' ? 'Scheduled Event' : 'Instant Meeting'],
+      ...(scheduledRange ? [['Scheduled Time', scheduledRange]] : []),
       ['Date', fmtDate(meetingStartTime || exportedAt)],
       ['Duration (min)', meetStart ? (meetDurationMin || '< 1') : 'N/A'],
       ['Total Invited', totalInvited],
