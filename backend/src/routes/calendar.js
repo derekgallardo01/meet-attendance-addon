@@ -6,9 +6,15 @@ const { persistCalendarData } = require('../services/firestore');
 
 const router = Router();
 
+// Extract meeting code from a Meet URL (e.g., "https://meet.google.com/abc-defg-hij" → "abc-defg-hij")
+function extractMeetCode(url) {
+  const match = (url || '').match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/);
+  return match ? match[1] : null;
+}
+
 router.get('/calendar-attendees', async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const { meetingCode } = req.query;
+  const { meetingCode, calendarId } = req.query;
   if (!meetingCode) return res.status(400).json({ error: 'meetingCode is required' });
 
   try {
@@ -22,7 +28,7 @@ router.get('/calendar-attendees', async (req, res) => {
     const timeMax = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString();
 
     const eventsResp = await calendar.events.list({
-      calendarId:   'primary',
+      calendarId:   calendarId || 'primary',
       timeMin,
       timeMax,
       singleEvents: true,
@@ -30,13 +36,15 @@ router.get('/calendar-attendees', async (req, res) => {
     });
 
     const events = eventsResp.data.items || [];
-    log.info('calendar events scanned', { count: events.length, meetingCode });
+    log.info('calendar events scanned', { count: events.length, meetingCode, calendarId: calendarId || 'primary' });
 
-    // Find all events matching this meeting code (recurring meetings share the same code)
+    // Find all events matching this meeting code — exact segment match, skip all-day events
     const matchingEvents = events.filter(e => {
-      const meetLink    = e.conferenceData?.entryPoints?.find(ep => ep.entryPointType === 'video')?.uri || '';
-      const hangoutLink = e.hangoutLink || '';
-      return meetLink.includes(meetingCode) || hangoutLink.includes(meetingCode);
+      // Skip all-day events (they rarely have Meet links, and distance calc breaks)
+      if (!e.start.dateTime) return false;
+      const meetCode    = extractMeetCode(e.conferenceData?.entryPoints?.find(ep => ep.entryPointType === 'video')?.uri);
+      const hangoutCode = extractMeetCode(e.hangoutLink);
+      return meetCode === meetingCode || hangoutCode === meetingCode;
     });
 
     // Pick the event closest to the current time (handles recurring meetings)
@@ -46,8 +54,8 @@ router.get('/calendar-attendees', async (req, res) => {
     } else if (matchingEvents.length > 1) {
       const now = Date.now();
       matchedEvent = matchingEvents.reduce((closest, e) => {
-        const eStart = new Date(e.start.dateTime || e.start.date).getTime();
-        const closestStart = new Date(closest.start.dateTime || closest.start.date).getTime();
+        const eStart = new Date(e.start.dateTime).getTime();
+        const closestStart = new Date(closest.start.dateTime).getTime();
         return Math.abs(eStart - now) < Math.abs(closestStart - now) ? e : closest;
       });
       log.info('recurring meeting — picked closest instance', { total: matchingEvents.length, picked: matchedEvent.start.dateTime });

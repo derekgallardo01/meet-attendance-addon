@@ -792,6 +792,65 @@ const state = {
 };
 
 /* ═══════════════════════════════════════════════════════════════
+   STATE PERSISTENCE — survive panel refreshes via sessionStorage
+═══════════════════════════════════════════════════════════════ */
+const STORAGE_KEY = 'meetAttendanceState';
+
+function saveState() {
+  try {
+    const snapshot = {
+      conferenceId: state.conferenceId,
+      meetingTitle: state.meetingTitle,
+      startTime: state.startTime?.toISOString() || null,
+      tracking: state.tracking,
+      sessionToken: state.sessionToken,
+      userEmail: state.userEmail,
+      signedIn: state.signedIn,
+      participants: [...state.participants.entries()].map(([k, v]) => [k, {
+        ...v,
+        joinTime: v.joinTime?.toISOString() || null,
+        trackedJoinTime: v.trackedJoinTime?.toISOString() || null,
+        leaveTime: v.leaveTime?.toISOString() || null,
+      }]),
+      _lastSheetUrl: state._lastSheetUrl || null,
+      savedAt: Date.now(),
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (e) { /* sessionStorage may be unavailable in iframe */ }
+}
+
+function restoreState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw);
+    // Only restore if saved within last 8 hours (session duration)
+    if (Date.now() - snap.savedAt > 8 * 60 * 60 * 1000) return false;
+
+    state.conferenceId = snap.conferenceId;
+    state.meetingTitle = snap.meetingTitle;
+    state.startTime = snap.startTime ? new Date(snap.startTime) : null;
+    state.sessionToken = snap.sessionToken;
+    state.userEmail = snap.userEmail;
+    state.signedIn = snap.signedIn;
+    state._lastSheetUrl = snap._lastSheetUrl;
+
+    // Restore participants map
+    state.participants.clear();
+    for (const [k, v] of (snap.participants || [])) {
+      state.participants.set(k, {
+        ...v,
+        joinTime: v.joinTime ? new Date(v.joinTime) : null,
+        trackedJoinTime: v.trackedJoinTime ? new Date(v.trackedJoinTime) : null,
+        leaveTime: v.leaveTime ? new Date(v.leaveTime) : null,
+      });
+    }
+
+    return snap.tracking;
+  } catch (e) { return false; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    AUTH — Google Sign-In with OAuth
 ═══════════════════════════════════════════════════════════════ */
 function authHeaders() {
@@ -835,6 +894,7 @@ async function handleAuthCode(response) {
     state.userEmail = data.email;
     state.signedIn = true;
     updateAuthUI();
+    saveState();
     toast('Signed in as ' + data.email);
   } catch (err) {
     console.error('Auth exchange failed:', err);
@@ -936,11 +996,43 @@ async function initSDK() {
     state.conferenceId = meetingInfo.meetingCode || meetingInfo.meetingId || null;
     state.meetingTitle = meetingInfo.meetingTitle || meetingInfo.title || 'Google Meet';
 
-    document.getElementById('meeting-title').textContent = state.meetingTitle;
-    setStatus('active', `Connected · ${state.conferenceId ?? 'no conference ID yet'}`);
+    // Try to restore previous session state (survives panel refreshes)
+    const wasTracking = restoreState();
 
-    // Auto-start tracking so rejoining does not require clicking Start again
-    if (state.conferenceId) { startTracking(); }
+    document.getElementById('meeting-title').textContent = state.meetingTitle;
+
+    // Restore auth UI if session was restored
+    if (state.signedIn && state.userEmail) {
+      document.getElementById('auth-bar').innerHTML =
+        `<span style="color:#4ade80">${state.userEmail}</span><br><a href="#" onclick="signOut();return false" style="color:#9ca3af;font-size:.75rem">Sign out</a>`;
+    }
+
+    if (wasTracking && state.conferenceId) {
+      // Resume tracking with existing participant data
+      state.tracking = true;
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-refresh').disabled = false;
+      document.getElementById('btn-sheets').disabled = false;
+      setStatus('active', `Tracking · ${state.participants.size} seen`);
+      showSearchBar();
+      startDurationTimer();
+      renderList();
+      updateSummary();
+      clearTimeout(state.refreshTimer);
+      clearInterval(state.countdownTimer);
+      schedulePoll();
+      state.countdownTimer = setInterval(() => {
+        state.syncCountdown = Math.max(0, state.syncCountdown - 1);
+        updateLastRefresh();
+      }, 1_000);
+      // Fetch fresh data immediately
+      refreshAttendance();
+    } else if (state.conferenceId) {
+      // Fresh start
+      startTracking();
+    } else {
+      setStatus('active', `Connected · no conference ID yet`);
+    }
 
   } catch (err) {
     console.error('[Attendance] SDK error:', err.message);
@@ -1044,8 +1136,7 @@ async function refreshAttendance() {
     updateSummary();
     updateLastRefresh();
     setStatus('active', `Tracking · ${state.participants.size} seen`);
-
-    // Auto-export removed — use the Sheet button manually
+    saveState();
 
   } catch (err) {
     console.error(err);
@@ -1383,6 +1474,7 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
     conferenceId: state.conferenceId,
     exportedAt:   now.toISOString(),
     meetingStartTime: state.startTime ? state.startTime.toISOString() : null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     calendarAttendees,
     participants: [...state.participants.values()].map(p => {
       // Use earliest known join time (API or frontend-tracked)
