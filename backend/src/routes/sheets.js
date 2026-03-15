@@ -49,7 +49,31 @@ router.post('/save-to-sheets', async (req, res) => {
     if (req.user) {
       spreadsheetId = await getUserSheetId(req.user.email);
       if (!spreadsheetId) {
-        // First export: create a new spreadsheet in the user's Drive
+        // First export: create folder + spreadsheet in user's Drive
+        const drive = google.drive({ version: 'v3', auth: sheetsAuth });
+
+        // Find or create "Meet Attendance Tracker" folder
+        let folderId;
+        const folderSearch = await drive.files.list({
+          q: "name='Meet Attendance Tracker' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+          fields: 'files(id)',
+          spaces: 'drive',
+        });
+        if (folderSearch.data.files?.length > 0) {
+          folderId = folderSearch.data.files[0].id;
+        } else {
+          const folderResp = await drive.files.create({
+            requestBody: {
+              name: 'Meet Attendance Tracker',
+              mimeType: 'application/vnd.google-apps.folder',
+            },
+            fields: 'id',
+          });
+          folderId = folderResp.data.id;
+          log.info('created Drive folder', { email: req.user.email, folderId });
+        }
+
+        // Create spreadsheet
         const createResp = await sheets.spreadsheets.create({
           requestBody: {
             properties: { title: 'Meet Attendance Tracker' },
@@ -57,8 +81,18 @@ router.post('/save-to-sheets', async (req, res) => {
           },
         });
         spreadsheetId = createResp.data.spreadsheetId;
+
+        // Move spreadsheet into the folder
+        const file = await drive.files.get({ fileId: spreadsheetId, fields: 'parents' });
+        await drive.files.update({
+          fileId: spreadsheetId,
+          addParents: folderId,
+          removeParents: (file.data.parents || []).join(','),
+          fields: 'id, parents',
+        });
+
         await setUserSheetId(req.user.email, spreadsheetId);
-        log.info('created user spreadsheet', { email: req.user.email, spreadsheetId });
+        log.info('created user spreadsheet in folder', { email: req.user.email, spreadsheetId, folderId });
       }
     } else {
       spreadsheetId = CONFIG.sheetId;
