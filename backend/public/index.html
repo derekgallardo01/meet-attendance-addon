@@ -1415,7 +1415,12 @@ function renderList() {
     return (a.joinTime || 0) - (b.joinTime || 0);
   });
 
-  container.innerHTML = sorted.map(p => {
+  // Performance: limit visible participants, show "Show all" button for large lists
+  const MAX_VISIBLE = 100;
+  const visible = state._showAll ? sorted : sorted.slice(0, MAX_VISIBLE);
+  const hiddenCount = sorted.length - visible.length;
+
+  container.innerHTML = visible.map(p => {
     const initials = p.displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     const joinStr  = p.joinTime ? fmtTime(p.joinTime) : '—';
     // Total duration: accumulated past sessions + current active session
@@ -1435,7 +1440,10 @@ function renderList() {
         </div>
         <span class="badge ${p.present ? 'present' : 'left'}">${p.present ? 'Present' : 'Left'}</span>
       </div>`;
-  }).join('');
+  }).join('') + (hiddenCount > 0 ? `
+    <button onclick="state._showAll=true;renderList()" style="width:100%;padding:8px;margin-top:8px;background:var(--surface);border:1px solid var(--border);color:var(--accent);border-radius:6px;cursor:pointer;font-size:.8rem">
+      Show ${hiddenCount} more participants
+    </button>` : '');
 }
 
 function updateSummary() {
