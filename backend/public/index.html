@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Attendance Tracker · Meet Add-on</title>
+  <title>Attendance Tracker</title>
 
   <!-- Sentry Error Tracking -->
   <script src="https://browser.sentry-cdn.com/9.28.1/bundle.min.js" crossorigin="anonymous"></script>
@@ -1104,7 +1104,7 @@ async function initSDK() {
         setStatus('loading', 'Demo mode — configure simulation below');
         showSimControls();
       } else {
-        document.getElementById('meeting-title').textContent = 'Meet Attendance Tracker';
+        document.getElementById('meeting-title').textContent = 'Attendance Tracker';
         setStatus('loading', 'Open this add-on inside a Google Meet call to start tracking.');
       }
       return;
