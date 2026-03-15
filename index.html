@@ -905,6 +905,7 @@ async function handleAuthCode(response) {
 
     state.sessionToken = data.sessionToken;
     state.userEmail = data.email;
+    state._selfEmail = data.email.toLowerCase();
     state.signedIn = true;
     updateAuthUI();
     saveState();
@@ -1042,6 +1043,22 @@ async function initSDK() {
       document.getElementById('auth-bar').innerHTML =
         `<span style="color:#4ade80">${state.userEmail}</span><br><a href="#" onclick="signOut();return false" style="color:#9ca3af;font-size:.75rem">Sign out</a>`;
     }
+
+    // ── Self-presence detection ──
+    // The user viewing this side panel is always in the meeting.
+    // Store their email so we can force them as "Present" even during API lag.
+    if (state.userEmail) {
+      state._selfEmail = state.userEmail.toLowerCase();
+    }
+
+    // ── Visibility-based presence detection ──
+    // When the panel becomes visible (user returns to Meet tab), trigger immediate refresh
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && state.tracking) {
+        console.log('[Attendance] Tab visible — triggering immediate refresh');
+        refreshAttendance();
+      }
+    });
 
     if (wasTracking && state.conferenceId) {
       // Resume tracking with existing participant data
@@ -1257,6 +1274,18 @@ function mergeParticipants(incoming = []) {
 
   // Track when changes happen for adaptive polling
   if (changed) state._lastChangeTime = Date.now();
+
+  // Self-presence override: if the current user is viewing this panel,
+  // they are in the meeting — force them as Present regardless of API lag
+  if (state._selfEmail) {
+    for (const [, p] of state.participants) {
+      if (p.email?.toLowerCase() === state._selfEmail && !p.present) {
+        p.present = true;
+        p._leftStreak = 0;
+        changed = true;
+      }
+    }
+  }
 
   // Update meeting start time to earliest API join time (more accurate than local timer)
   const allJoinTimes = [...state.participants.values()]
