@@ -66,6 +66,21 @@ router.get('/admin/stats', async (req, res) => {
     const meetingsSnap = await db.collection('tenants').doc(domain).collection('meetings').get();
     const exportsSnap = await db.collection('tenants').doc(domain).collection('exports').get();
 
+    // Get recent users with last login
+    const recentUsers = usersSnap.docs
+      .map(d => ({ email: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const aTime = a.lastLoginAt?.toDate?.() || new Date(0);
+        const bTime = b.lastLoginAt?.toDate?.() || new Date(0);
+        return bTime - aTime;
+      })
+      .slice(0, 20)
+      .map(u => ({
+        email: u.email,
+        displayName: u.displayName || '',
+        lastLogin: u.lastLoginAt?.toDate?.()?.toISOString() || null,
+      }));
+
     res.json({
       totalTenants: tenants.length,
       tenants: tenants.map(t => ({ domain: t.domain, active: t.active, installedAt: t.installedAt })),
@@ -74,6 +89,7 @@ router.get('/admin/stats', async (req, res) => {
         users: usersSnap.size,
         meetings: meetingsSnap.size,
         exports: exportsSnap.size,
+        recentUsers,
       },
     });
   } catch (err) {
