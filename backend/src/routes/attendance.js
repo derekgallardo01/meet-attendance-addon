@@ -76,19 +76,13 @@ router.get('/attendance', async (req, res) => {
   }
 
   try {
-    // Use user's OAuth token for Meet API if authenticated, service account fallback
-    let token;
+    // Always use service account for Meet API — user OAuth tokens can't see
+    // external (non-org) participants. User OAuth is used for Calendar/Sheets only.
     const userDomainForTenant = req.user?.domain || 'default';
     const tenantConfig = await getTenantConfig(userDomainForTenant);
-
-    if (req.user?.accessToken) {
-      token = req.user.accessToken;
-      log.info('using user OAuth token for Meet API', { email: req.user.email });
-    } else {
-      const impersonateEmail = tenantConfig?.impersonateEmail || CONFIG.impersonateEmail;
-      token = await getMeetToken(impersonateEmail);
-      log.info('using service account for Meet API');
-    }
+    const impersonateEmail = tenantConfig?.impersonateEmail || CONFIG.impersonateEmail;
+    const token = await getMeetToken(impersonateEmail);
+    log.info('using service account for Meet API', { impersonateEmail });
     let records = [];
 
     try {
@@ -155,10 +149,8 @@ router.get('/attendance', async (req, res) => {
       participants.push(...batchResults);
     }
 
-    // Enrich missing emails via Workspace Directory API (only when using service account)
-    if (!req.user?.accessToken) {
-      await enrichEmails(participants, tenantConfig?.adminEmail);
-    }
+    // Enrich missing emails via Workspace Directory API
+    await enrichEmails(participants, tenantConfig?.adminEmail);
 
     res.json({ participants });
 
@@ -167,11 +159,6 @@ router.get('/attendance', async (req, res) => {
     persistAttendance(domain, conferenceId, conferenceRecord.name, participants);
 
   } catch (err) {
-    // If user token lacks Meet scope, prompt re-consent
-    if (req.user?.accessToken && (err.message?.includes('403') || err.message?.includes('PERMISSION_DENIED') || err.message?.includes('insufficient'))) {
-      log.warn('Meet API permission denied with user token — scope may be missing', { email: req.user.email });
-      return res.status(403).json({ error: 'scope_required', scope: 'meetings.space.readonly' });
-    }
     log.error('attendance fetch failed', { error: err.message });
     res.status(500).json({ error: 'Failed to fetch attendance data.' });
   }
