@@ -1867,23 +1867,28 @@ function renderInvitedList() {
     return;
   }
 
-  // Build a set of attended emails for matching
+  // Build a set of attended emails + names for matching
   const attendedEmails = new Set();
   const attendedNames = new Set();
   for (const [, p] of state.participants) {
     if (p.email) attendedEmails.add(p.email.toLowerCase());
     attendedNames.add(p.displayName.toLowerCase().trim());
   }
+  // Also add the signed-in user's email (they're always present)
+  if (state._selfEmail) attendedEmails.add(state._selfEmail);
 
   container.innerHTML = attendees.map(a => {
     const email = a.email.toLowerCase();
     const name = (a.displayName || a.email.split('@')[0]);
     const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-    // Check if this invitee has joined
+    // Check if this invitee has joined — match by email, display name, or first name
     const joinedByEmail = attendedEmails.has(email);
     const joinedByName = attendedNames.has(name.toLowerCase().trim());
-    const joined = joinedByEmail || joinedByName;
+    // First name fallback: "Derek Gallardo" matches "Derek" prefix
+    const firstName = name.toLowerCase().split(' ')[0];
+    const joinedByFirstName = [...attendedNames].some(n => n.split(' ')[0] === firstName);
+    const joined = joinedByEmail || joinedByName || joinedByFirstName;
 
     // RSVP badge
     let rsvpClass = 'rsvp-noresponse';
