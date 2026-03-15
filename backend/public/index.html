@@ -1894,19 +1894,10 @@ function renderInvitedList() {
     const name = (a.displayName || a.email.split('@')[0]);
     const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-    // Check if this invitee has joined — multiple matching strategies
+    // Check if this invitee has joined — match by email or exact full name only
     const joinedByEmail = attendedEmails.has(email);
     const joinedByName = attendedNames.has(name.toLowerCase().trim());
-    // First name fallback: "Derek Gallardo" participant matches "derek" invitee
-    const firstName = name.toLowerCase().split(' ')[0];
-    const joinedByFirstName = [...attendedNames].some(n => n.split(' ')[0] === firstName);
-    // Email username fallback: "derekgallardo01" in email matches participant "Derek" by checking if either contains the other
-    const emailUser = email.split('@')[0].toLowerCase();
-    const joinedByEmailUser = [...attendedNames].some(n => {
-      const pFirst = n.split(' ')[0];
-      return emailUser.includes(pFirst) || pFirst.includes(emailUser);
-    });
-    const joined = joinedByEmail || joinedByName || joinedByFirstName || joinedByEmailUser;
+    const joined = joinedByEmail || joinedByName;
 
     // RSVP badge
     let rsvpClass = 'rsvp-noresponse';
