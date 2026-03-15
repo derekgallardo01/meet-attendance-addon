@@ -1,3 +1,6 @@
+// Sentry must be initialized before all other imports
+require('./src/instrument');
+
 const app = require('./src/app');
 const CONFIG = require('./src/config');
 const log = require('./src/lib/logger');

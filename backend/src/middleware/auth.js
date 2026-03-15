@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const Sentry = require('@sentry/node');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
 const { getUser, updateUserTokens } = require('../services/firestore');
@@ -47,6 +48,9 @@ async function auth(req, res, next) {
       displayName: decoded.displayName,
       accessToken,
     };
+
+    // Attach user context to Sentry for error tracking
+    Sentry.setUser({ email: decoded.email, segment: decoded.domain });
 
     next();
   } catch (err) {

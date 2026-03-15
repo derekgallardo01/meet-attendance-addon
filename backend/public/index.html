@@ -8,6 +8,17 @@
   <meta http-equiv="Expires" content="0" />
   <title>Attendance Tracker · Meet Add-on</title>
 
+  <!-- Sentry Error Tracking -->
+  <script src="https://browser.sentry-cdn.com/9.28.1/bundle.min.js" crossorigin="anonymous"></script>
+  <script>
+    if (window.Sentry) {
+      Sentry.init({
+        dsn: 'https://95d14af111a0266aeb57c888802e4fae@o4510162222448640.ingest.us.sentry.io/4511049251094528',
+        environment: 'production',
+      });
+    }
+  </script>
+
   <!-- Meet Add-ons SDK — load dynamically so we can detect failures -->
   <script>
     window._meetSdkReady = new Promise((resolve) => {
@@ -921,6 +932,8 @@ async function handleAuthCode(response) {
     updateAuthUI();
     saveState();
     toast('Signed in as ' + data.email);
+    // Attach user context to Sentry
+    if (window.Sentry) Sentry.setUser({ email: data.email });
 
     // Auto-start tracking if sign-in was triggered by Start button
     if (state._startAfterSignIn) {

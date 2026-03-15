@@ -1,7 +1,18 @@
+const Sentry = require('@sentry/node');
+
+function emit(severity, consoleFn, msg, data) {
+  const entry = { severity, msg, ...data, ts: new Date().toISOString() };
+  consoleFn(JSON.stringify(entry));
+  // Also send errors/warnings to Sentry as breadcrumbs
+  if (severity === 'ERROR') {
+    Sentry.captureMessage(msg, { level: 'error', extra: data });
+  }
+}
+
 const log = {
-  info:  (msg, data = {}) => console.log(JSON.stringify({ severity: 'INFO',    msg, ...data, ts: new Date().toISOString() })),
-  warn:  (msg, data = {}) => console.warn(JSON.stringify({ severity: 'WARNING', msg, ...data, ts: new Date().toISOString() })),
-  error: (msg, data = {}) => console.error(JSON.stringify({ severity: 'ERROR',  msg, ...data, ts: new Date().toISOString() })),
+  info:  (msg, data = {}) => emit('INFO',    console.log,   msg, data),
+  warn:  (msg, data = {}) => emit('WARNING', console.warn,  msg, data),
+  error: (msg, data = {}) => emit('ERROR',   console.error, msg, data),
 };
 
 module.exports = log;

@@ -86,7 +86,7 @@ router.get('/calendar-attendees', async (req, res) => {
     });
 
     // Fire-and-forget: store title + invited attendees for analytics
-    const domain = req.user?.domain || CONFIG.allowedDomains?.[0] || 'default';
+    const domain = req.user?.domain || 'default';
     persistCalendarData(domain, meetingCode, matchedEvent.summary || 'Scheduled Meeting', attendees);
 
   } catch (err) {
