@@ -34,11 +34,11 @@ router.post('/oauth/exchange', async (req, res) => {
       refreshToken: tokens.refresh_token || undefined,
     });
 
-    // Issue backend session JWT (2 hour expiry)
+    // Issue backend session JWT (8 hour expiry — covers full-day meetings)
     const sessionToken = jwt.sign(
       { email, domain, displayName },
       CONFIG.sessionSecret,
-      { expiresIn: '2h' }
+      { expiresIn: '8h' }
     );
 
     log.info('oauth: user authenticated', { email, domain });

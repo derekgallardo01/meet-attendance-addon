@@ -1,6 +1,7 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const CONFIG = require('./config');
 const auth = require('./middleware/auth');
@@ -13,7 +14,22 @@ const oauthRoutes = require('./routes/oauth');
 const app = express();
 app.set('trust proxy', 1); // Cloud Run runs behind a load balancer
 
-app.use(express.json());
+// Security headers — allow framing from meet.google.com (side panel iframe)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://apis.google.com", "https://www.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      frameSrc: ["https://accounts.google.com"],
+      frameAncestors: ["https://meet.google.com", "'self'"],
+      connectSrc: ["'self'", "https://accounts.google.com"],
+    },
+  },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, // needed for GIS popup
+}));
+
+app.use(express.json({ limit: '100kb' }));
 app.use(cors({ origin: CONFIG.allowedOrigins }));
 
 // Stricter rate limit on OAuth endpoints (10 req/min)
@@ -41,6 +57,6 @@ app.use('/api', calendarRoutes);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Health check
-app.get('/health', (req, res) => res.json({ status: 'ok', service: 'meet-attendance-backend', ts: new Date().toISOString() }));
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 module.exports = app;

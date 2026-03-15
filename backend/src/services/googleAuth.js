@@ -3,24 +3,29 @@ const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
 
-// ── Cached secrets ──
+// ── Cached secrets with 24h TTL ──
+const SECRET_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 let serviceAccountKey = null;
+let serviceAccountKeyLoadedAt = 0;
 let oauthClientSecret = null;
+let oauthClientSecretLoadedAt = 0;
 
 async function loadServiceAccountKey() {
-  if (serviceAccountKey) return serviceAccountKey;
+  if (serviceAccountKey && (Date.now() - serviceAccountKeyLoadedAt) < SECRET_TTL_MS) return serviceAccountKey;
   const client = new SecretManagerServiceClient();
   const [version] = await client.accessSecretVersion({ name: `${CONFIG.secretName}/versions/latest` });
   serviceAccountKey = JSON.parse(version.payload.data.toString());
+  serviceAccountKeyLoadedAt = Date.now();
   log.info('service account key loaded');
   return serviceAccountKey;
 }
 
 async function loadOAuthClientSecret() {
-  if (oauthClientSecret) return oauthClientSecret;
+  if (oauthClientSecret && (Date.now() - oauthClientSecretLoadedAt) < SECRET_TTL_MS) return oauthClientSecret;
   const client = new SecretManagerServiceClient();
   const [version] = await client.accessSecretVersion({ name: `${CONFIG.oauthClientSecretName}/versions/latest` });
   oauthClientSecret = version.payload.data.toString().trim();
+  oauthClientSecretLoadedAt = Date.now();
   log.info('oauth client secret loaded');
   return oauthClientSecret;
 }
