@@ -150,7 +150,7 @@
             sessionToken = data.sessionToken;
             document.getElementById('user-email').textContent = data.email;
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('dashboard').style.display = '';
+            document.getElementById('dashboard').style.display = 'block';
             loadDashboard();
           } catch (err) {
             alert('Sign-in failed: ' + err.message);
