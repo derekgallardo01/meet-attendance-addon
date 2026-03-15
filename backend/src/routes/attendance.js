@@ -76,13 +76,30 @@ router.get('/attendance', async (req, res) => {
   }
 
   try {
-    // Always use service account for Meet API — user OAuth tokens can't see
-    // external (non-org) participants. User OAuth is used for Calendar/Sheets only.
+    // Try service account first (sees all participants including external guests).
+    // Fall back to user OAuth token if delegation isn't configured for this org.
     const userDomainForTenant = req.user?.domain || 'default';
     const tenantConfig = await getTenantConfig(userDomainForTenant);
     const impersonateEmail = tenantConfig?.impersonateEmail || CONFIG.impersonateEmail;
-    const token = await getMeetToken(impersonateEmail);
-    log.info('using service account for Meet API', { impersonateEmail });
+
+    let token;
+    let usingServiceAccount = false;
+    if (impersonateEmail) {
+      try {
+        token = await getMeetToken(impersonateEmail);
+        usingServiceAccount = true;
+        log.info('using service account for Meet API', { impersonateEmail });
+      } catch (saErr) {
+        log.warn('service account failed, falling back to user OAuth', { error: saErr.message });
+      }
+    }
+    if (!token && req.user?.accessToken) {
+      token = req.user.accessToken;
+      log.info('using user OAuth for Meet API (limited — same-org only)', { email: req.user.email });
+    }
+    if (!token) {
+      return res.status(401).json({ error: 'No authentication available for Meet API. Admin setup may be required.' });
+    }
     let records = [];
 
     try {
@@ -152,7 +169,7 @@ router.get('/attendance', async (req, res) => {
     // Enrich missing emails via Workspace Directory API
     await enrichEmails(participants, tenantConfig?.adminEmail);
 
-    res.json({ participants });
+    res.json({ participants, delegationConfigured: usingServiceAccount });
 
     // Fire-and-forget: persist to Firestore for analytics
     const domain = req.user?.domain || 'default';

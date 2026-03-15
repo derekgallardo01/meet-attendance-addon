@@ -82,4 +82,32 @@ router.get('/admin/stats', async (req, res) => {
   }
 });
 
+// POST /api/admin/verify-delegation — Test if domain-wide delegation works
+router.post('/admin/verify-delegation', async (req, res) => {
+  try {
+    const { domain, adminEmail } = req.body;
+    if (!domain || !adminEmail) {
+      return res.status(400).json({ error: 'domain and adminEmail required' });
+    }
+
+    // Try to get a Meet API token by impersonating the admin
+    const { getMeetToken } = require('../services/googleAuth');
+    await getMeetToken(adminEmail);
+
+    // If we get here, delegation works — store the config
+    await upsertTenantConfig(domain, {
+      adminEmail,
+      impersonateEmail: adminEmail,
+      delegationVerified: true,
+      active: true,
+    });
+
+    log.info('admin: delegation verified', { domain, adminEmail });
+    res.json({ success: true });
+  } catch (err) {
+    log.warn('admin: delegation verification failed', { error: err.message });
+    res.json({ success: false, error: 'Domain-wide delegation is not configured correctly. Please check the setup steps and try again.' });
+  }
+});
+
 module.exports = router;

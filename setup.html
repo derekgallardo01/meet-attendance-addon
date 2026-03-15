@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Setup — Meet Attendance Tracker</title>
+  <style>
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #4ade80; --error: #f85149; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
+    .container { max-width: 640px; width: 100%; }
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+    .logo svg { width: 36px; height: 36px; fill: var(--accent); }
+    .logo h1 { font-size: 1.4rem; font-weight: 600; }
+    .logo span { color: var(--muted); font-size: .85rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .step-num { background: var(--accent); color: var(--bg); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+    .step-num.done { background: var(--accent); }
+    .card p { color: var(--muted); font-size: .9rem; line-height: 1.5; margin-bottom: 12px; }
+    .copy-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: monospace; font-size: .8rem; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; word-break: break-all; }
+    .copy-box code { flex: 1; }
+    .copy-btn { background: var(--accent); color: var(--bg); border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+    .copy-btn:hover { opacity: .9; }
+    .scope-list { list-style: none; margin: 8px 0; }
+    .scope-list li { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-family: monospace; font-size: .75rem; display: flex; align-items: center; gap: 8px; }
+    .scope-list .label { color: var(--muted); font-family: sans-serif; font-size: .7rem; }
+    input[type="email"] { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: .9rem; margin-bottom: 12px; }
+    input[type="email"]:focus { outline: none; border-color: var(--accent); }
+    .btn-verify { width: 100%; padding: 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-size: .95rem; font-weight: 600; cursor: pointer; }
+    .btn-verify:hover { opacity: .9; }
+    .btn-verify:disabled { opacity: .5; cursor: not-allowed; }
+    .result { padding: 12px 16px; border-radius: 8px; margin-top: 12px; font-size: .85rem; display: none; }
+    .result.success { background: rgba(74,222,128,.1); border: 1px solid var(--accent); color: var(--accent); display: block; }
+    .result.error { background: rgba(248,81,73,.1); border: 1px solid var(--error); color: var(--error); display: block; }
+    .info-box { background: rgba(74,222,128,.05); border: 1px solid rgba(74,222,128,.2); border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .info-box h3 { font-size: .85rem; margin-bottom: 8px; color: var(--accent); }
+    .info-box p { font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/>
+      </svg>
+      <div>
+        <h1>Meet Attendance Tracker</h1>
+        <span>Admin Setup Guide</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step-num">1</span> Copy the Service Account Client ID</h2>
+      <p>This ID identifies our app's service account. You'll add it to your Workspace admin console.</p>
+      <div class="copy-box">
+        <code id="client-id">103579252822182721837</code>
+        <button class="copy-btn" onclick="copyText('client-id')">Copy</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step-num">2</span> Open Domain-Wide Delegation</h2>
+      <p>Go to your Google Workspace Admin Console:</p>
+      <p><a href="https://admin.google.com/ac/owl/domainwidedelegation" target="_blank">admin.google.com → Security → API Controls → Domain-wide Delegation →</a></p>
+      <p>Click <strong>"Add new"</strong> and paste the Client ID from Step 1.</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="step-num">3</span> Add These Scopes</h2>
+      <p>In the "OAuth scopes" field, add these scopes (one per line or comma-separated):</p>
+      <ul class="scope-list">
+        <li>
+          <code id="scope-meet">https://www.googleapis.com/auth/meetings.space.readonly</code>
+          <button class="copy-btn" onclick="copyText('scope-meet')">Copy</button>
+        </li>
+        <li>
+          <span class="label">Required — allows reading meeting participants</span>
+        </li>
+        <li>
+          <code id="scope-dir">https://www.googleapis.com/auth/admin.directory.user.readonly</code>
+          <button class="copy-btn" onclick="copyText('scope-dir')">Copy</button>
+        </li>
+        <li>
+          <span class="label">Optional — enables automatic email resolution for participants</span>
+        </li>
+      </ul>
+      <div class="copy-box">
+        <code id="all-scopes">https://www.googleapis.com/auth/meetings.space.readonly,https://www.googleapis.com/auth/admin.directory.user.readonly</code>
+        <button class="copy-btn" onclick="copyText('all-scopes')">Copy all</button>
+      </div>
+      <p>Click <strong>"Authorize"</strong> to save.</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="step-num">4</span> Verify Setup</h2>
+      <p>Enter your Workspace admin email to verify the delegation is working:</p>
+      <input type="email" id="admin-email" placeholder="admin@yourcompany.com" />
+      <button class="btn-verify" id="btn-verify" onclick="verifyDelegation()">Verify Setup</button>
+      <div class="result" id="result"></div>
+    </div>
+
+    <div class="info-box">
+      <h3>What does this grant access to?</h3>
+      <p><strong>meetings.space.readonly</strong> — Read-only access to see who joined your organization's meetings. Cannot modify meetings or access content.</p>
+      <p><strong>admin.directory.user.readonly</strong> — Read-only access to look up user email addresses by their Google ID. Cannot modify user accounts.</p>
+      <p style="margin-top: 8px">You can revoke this access at any time by removing the Client ID from Domain-wide Delegation.</p>
+      <p style="margin-top: 8px"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'https://meet-attendance-backend-415551639811.us-central1.run.app/api';
+
+    function copyText(id) {
+      const text = document.getElementById(id).textContent;
+      navigator.clipboard.writeText(text);
+      const btn = document.getElementById(id).parentElement.querySelector('.copy-btn');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    }
+
+    async function verifyDelegation() {
+      const email = document.getElementById('admin-email').value.trim();
+      if (!email) return;
+
+      const btn = document.getElementById('btn-verify');
+      const result = document.getElementById('result');
+      btn.disabled = true;
+      btn.textContent = 'Verifying…';
+      result.className = 'result';
+      result.style.display = 'none';
+
+      try {
+        const domain = email.split('@')[1];
+        const res = await fetch(`${BACKEND_URL}/admin/verify-delegation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain, adminEmail: email }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          result.className = 'result success';
+          result.textContent = 'Setup complete! Domain-wide delegation is working. You can now open Google Meet and start tracking attendance.';
+        } else {
+          result.className = 'result error';
+          result.textContent = data.error || 'Delegation not configured correctly. Please check the steps above and try again.';
+        }
+      } catch (err) {
+        result.className = 'result error';
+        result.textContent = 'Could not reach the server. Please try again.';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Verify Setup';
+    }
+  </script>
+</body>
+</html>

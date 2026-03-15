@@ -766,6 +766,11 @@
     </span>
   </div>
 
+  <!-- ── Setup banner (shown when delegation not configured) ── -->
+  <div id="setup-banner" style="display:none; padding:8px 16px; background:rgba(255,193,7,.1); border-bottom:1px solid rgba(255,193,7,.3); font-size:.75rem; color:#ffc107;">
+    Some participants may not appear. <a href="https://derekgallardo01.github.io/meet-attendance-addon/setup.html" target="_blank" style="color:#ffc107;text-decoration:underline">Ask your admin to complete setup</a>
+  </div>
+
   <!-- ── Status bar ── -->
   <div id="status-bar">
     <div class="dot" id="status-dot"></div>
@@ -1319,6 +1324,14 @@ async function refreshAttendance() {
     // Merge in simulated participants if injection is active (demo video mode)
     if (inject.active) {
       data.participants = [...data.participants, ...getInjectedParticipants()];
+    }
+
+    // Show setup banner if delegation not configured
+    const setupBanner = document.getElementById('setup-banner');
+    if (setupBanner && data.delegationConfigured === false && state.signedIn) {
+      setupBanner.style.display = '';
+    } else if (setupBanner && data.delegationConfigured === true) {
+      setupBanner.style.display = 'none';
     }
 
     const hadParticipantsBefore = state.participants.size > 0;
