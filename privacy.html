@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Meet Attendance Tracker</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+    h1 { color: #1a73e8; }
+    h2 { margin-top: 2em; color: #202124; }
+    .updated { color: #666; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: March 15, 2026</p>
+
+  <h2>Overview</h2>
+  <p>Meet Attendance Tracker ("the App") is a Google Meet add-on that helps meeting organizers track participant attendance and export reports to Google Sheets. This policy describes how we collect, use, and protect your data.</p>
+
+  <h2>Data We Collect</h2>
+  <ul>
+    <li><strong>Google account information:</strong> Your name, email address, and Google Workspace domain (obtained via Google Sign-In).</li>
+    <li><strong>Meeting data:</strong> Conference IDs, participant names, join/leave times, and session counts (obtained via the Google Meet REST API).</li>
+    <li><strong>Calendar data:</strong> Event titles and attendee lists for meetings you organize (obtained via the Google Calendar API).</li>
+    <li><strong>Authentication tokens:</strong> OAuth refresh tokens (encrypted at rest) to maintain your session.</li>
+  </ul>
+
+  <h2>How We Use Your Data</h2>
+  <ul>
+    <li>Display real-time attendance in the Meet side panel.</li>
+    <li>Export attendance reports to Google Sheets in your Google Drive.</li>
+    <li>Match meeting participants to calendar invitees for RSVP status and no-show tracking.</li>
+  </ul>
+  <p>We do <strong>not</strong> sell, share, or transfer your data to third parties. We do <strong>not</strong> use your data for advertising or profiling.</p>
+
+  <h2>Data Storage</h2>
+  <ul>
+    <li>Meeting and user data is stored in Google Cloud Firestore, isolated by your organization's domain.</li>
+    <li>Refresh tokens are encrypted using AES-256-GCM before storage.</li>
+    <li>All data is hosted on Google Cloud Platform in the US (us-central1 region).</li>
+  </ul>
+
+  <h2>Data Retention</h2>
+  <ul>
+    <li>Meeting attendance data is retained for as long as your account is active.</li>
+    <li>When you uninstall the App, your data is deleted within 30 days.</li>
+    <li>You can request immediate data deletion by contacting us.</li>
+  </ul>
+
+  <h2>Google API Scopes</h2>
+  <p>The App requests the following Google API scopes:</p>
+  <ul>
+    <li><code>meetings.space.readonly</code> — View participant information for meetings you have access to.</li>
+    <li><code>calendar.events.readonly</code> — View calendar events to match attendees and RSVP status.</li>
+    <li><code>spreadsheets</code> — Create and update attendance report spreadsheets.</li>
+    <li><code>drive.file</code> — Create a folder in your Drive to organize exported reports.</li>
+  </ul>
+
+  <h2>Your Rights</h2>
+  <ul>
+    <li>You can revoke the App's access at any time via <a href="https://myaccount.google.com/permissions">Google Account Permissions</a>.</li>
+    <li>You can request export or deletion of your data by contacting us.</li>
+  </ul>
+
+  <h2>Security</h2>
+  <p>We use industry-standard security practices including HTTPS encryption in transit, encrypted tokens at rest, and Google Cloud's built-in security infrastructure.</p>
+
+  <h2>Contact</h2>
+  <p>For questions about this privacy policy or to request data deletion, contact: <a href="mailto:support@theyachtgroup.com">support@theyachtgroup.com</a></p>
+</body>
+</html>
