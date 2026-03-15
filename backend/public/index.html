@@ -841,6 +841,8 @@ function restoreState() {
     state.userEmail = snap.userEmail;
     state.signedIn = snap.signedIn;
     state._lastSheetUrl = snap._lastSheetUrl;
+    state._selfDisplayName = snap.userDisplayName || null;
+    if (snap.userEmail) state._selfEmail = snap.userEmail.toLowerCase();
 
     // Restore participants map — reset streak counters so API decides fresh status
     state.participants.clear();
@@ -1255,14 +1257,17 @@ function mergeParticipants(incoming = []) {
       const newSessions = p.sessions || existing.sessions;
 
       // Self-user is ALWAYS present while viewing the side panel — skip all left-streak logic
-      // Match by email (incoming or existing) OR by display name from the signed-in user
+      // Strategy 1: Match by email (incoming or already stored on participant)
       const pEmail = (p.email || existing.email || '').toLowerCase();
-      const isSelf = state._selfEmail && (
-        pEmail === state._selfEmail ||
-        (state._selfDisplayName && p.displayName?.toLowerCase() === state._selfDisplayName)
-      );
+      const emailMatch = pEmail && state._selfEmail && pEmail === state._selfEmail;
+      // Strategy 2: Match by display name from OAuth
+      const nameMatch = state._selfDisplayName && p.displayName?.toLowerCase() === state._selfDisplayName;
+      // Strategy 3: If signed in and only 1 participant, it must be the organizer
+      const soloMatch = state.signedIn && state.participants.size <= 1 && incoming.length <= 1;
+      const isSelf = !!(emailMatch || nameMatch || soloMatch);
 
       if (isSelf) {
+        console.log('[Attendance] Self-presence: keeping self as Present', { emailMatch, nameMatch, soloMatch });
         if (!existing.present) changed = true;
         existing.present = true;
         existing._leftStreak = 0;
