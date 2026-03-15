@@ -1319,12 +1319,11 @@ function mergeParticipants(incoming = []) {
   // Track when changes happen for adaptive polling
   if (changed) state._lastChangeTime = Date.now();
 
-  // Update meeting start time to earliest API join time (more accurate than local timer)
-  const allJoinTimes = [...state.participants.values()]
-    .map(p => p.joinTime)
-    .filter(Boolean);
-  if (allJoinTimes.length > 0) {
-    const earliest = new Date(Math.min(...allJoinTimes));
+  // Update meeting start time to earliest known join time (API join or first-seen tracked time)
+  const allTimes = [...state.participants.values()]
+    .flatMap(p => [p.joinTime, p.trackedJoinTime].filter(Boolean));
+  if (allTimes.length > 0) {
+    const earliest = new Date(Math.min(...allTimes));
     if (!state.startTime || earliest < state.startTime) {
       state.startTime = earliest;
     }
