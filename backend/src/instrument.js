@@ -5,7 +5,7 @@ Sentry.init({
   sendDefaultPii: true,
   environment: process.env.NODE_ENV || 'production',
   tracesSampleRate: 0.1,
-  debug: true,
+  debug: false,
 });
 
 console.log('[Sentry] initialized');
