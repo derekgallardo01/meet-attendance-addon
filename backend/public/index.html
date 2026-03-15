@@ -841,7 +841,7 @@ function restoreState() {
     state.signedIn = snap.signedIn;
     state._lastSheetUrl = snap._lastSheetUrl;
 
-    // Restore participants map
+    // Restore participants map — reset streak counters so API decides fresh status
     state.participants.clear();
     for (const [k, v] of (snap.participants || [])) {
       state.participants.set(k, {
@@ -849,6 +849,7 @@ function restoreState() {
         joinTime: v.joinTime ? new Date(v.joinTime) : null,
         trackedJoinTime: v.trackedJoinTime ? new Date(v.trackedJoinTime) : null,
         leaveTime: v.leaveTime ? new Date(v.leaveTime) : null,
+        _notPresentStreak: 0, // reset — let API determine status after refresh
       });
     }
 
