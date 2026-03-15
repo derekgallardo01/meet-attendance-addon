@@ -813,12 +813,17 @@ function saveState() {
       userEmail: state.userEmail,
       userDisplayName: state._selfDisplayName || null,
       signedIn: state.signedIn,
-      participants: [...state.participants.entries()].map(([k, v]) => [k, {
-        ...v,
-        joinTime: v.joinTime?.toISOString() || null,
-        trackedJoinTime: v.trackedJoinTime?.toISOString() || null,
-        leaveTime: v.leaveTime?.toISOString() || null,
-      }]),
+      participants: [...state.participants.entries()].map(([k, v]) => {
+        // Snapshot accumulated duration including current active session
+        const activeDur = v.present && v.joinTime ? (Date.now() - v.joinTime.getTime()) : 0;
+        return [k, {
+          ...v,
+          joinTime: v.joinTime?.toISOString() || null,
+          trackedJoinTime: v.trackedJoinTime?.toISOString() || null,
+          leaveTime: v.leaveTime?.toISOString() || null,
+          _accumulatedMs: (v._accumulatedMs || 0) + activeDur,
+        }];
+      }),
       _lastSheetUrl: state._lastSheetUrl || null,
       savedAt: Date.now(),
     };
