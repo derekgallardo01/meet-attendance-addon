@@ -32,7 +32,7 @@ app.use(helmet({
 app.use(express.json({ limit: '100kb' }));
 app.use(cors({ origin: CONFIG.allowedOrigins }));
 
-// Stricter rate limit on OAuth endpoints (10 req/min)
+// OAuth routes — no auth middleware, own rate limit (10 req/min)
 const oauthLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -40,9 +40,7 @@ const oauthLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many auth requests, please try again later.' },
 });
-
-// OAuth routes — no auth middleware (user isn't authenticated yet)
-app.use('/api', oauthLimiter, oauthRoutes);
+app.use('/api/oauth', oauthLimiter, oauthRoutes);
 
 // Rate limiting and auth on all other /api routes
 app.use('/api', apiLimiter);

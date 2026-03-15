@@ -9,7 +9,7 @@ const { upsertUser, getUser, updateUserTokens } = require('../services/firestore
 const router = Router();
 
 // POST /api/oauth/exchange — swap authorization code for session token
-router.post('/oauth/exchange', async (req, res) => {
+router.post('/exchange', async (req, res) => {
   try {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Authorization code required' });
@@ -57,7 +57,7 @@ router.post('/oauth/exchange', async (req, res) => {
 });
 
 // POST /api/oauth/revoke — sign out and revoke refresh token
-router.post('/oauth/revoke', async (req, res) => {
+router.post('/revoke', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
