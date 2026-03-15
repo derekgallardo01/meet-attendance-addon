@@ -874,7 +874,18 @@
 ═══════════════════════════════════════════════════════════════ */
 // ── Configuration (single place for all environment-specific values) ──
 const APP_CONFIG = {
-  cloudProjectNumber: '829771833968',
+  // Detect project number from Meet SDK URL param, fallback to default
+  cloudProjectNumber: (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sdk = params.get('meet_sdk');
+      if (sdk) {
+        const decoded = JSON.parse(atob(sdk));
+        if (decoded[3]) return String(decoded[3]);
+      }
+    } catch {}
+    return '829771833968'; // default: public project
+  })(),
   googleClientId: '829771833968-92hq9toga2ga92mg7nfuf6dqclj7er2n.apps.googleusercontent.com',
   backendUrl: '/api',
 };
