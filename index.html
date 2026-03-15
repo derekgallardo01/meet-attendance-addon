@@ -2224,7 +2224,8 @@ function startSimulation() {
     updateLastRefresh();
   }, 1000);
 
-  document.getElementById('sim-controls').style.display = 'none';
+  const simCtrl = document.getElementById('sim-controls');
+  if (simCtrl) simCtrl.style.display = 'none';
 }
 
 function resetSimulation() {
