@@ -813,17 +813,15 @@ function saveState() {
       userEmail: state.userEmail,
       userDisplayName: state._selfDisplayName || null,
       signedIn: state.signedIn,
-      participants: [...state.participants.entries()].map(([k, v]) => {
-        // Snapshot accumulated duration including current active session
-        const activeDur = v.present && v.joinTime ? (Date.now() - v.joinTime.getTime()) : 0;
-        return [k, {
-          ...v,
-          joinTime: v.joinTime?.toISOString() || null,
-          trackedJoinTime: v.trackedJoinTime?.toISOString() || null,
-          leaveTime: v.leaveTime?.toISOString() || null,
-          _accumulatedMs: (v._accumulatedMs || 0) + activeDur,
-        }];
-      }),
+      participants: [...state.participants.entries()].map(([k, v]) => [k, {
+        ...v,
+        joinTime: v.joinTime?.toISOString() || null,
+        trackedJoinTime: v.trackedJoinTime?.toISOString() || null,
+        leaveTime: v.leaveTime?.toISOString() || null,
+        // Only save the accumulated past-session duration (not active session)
+        // Active session time is calculated live in renderList from joinTime
+        _accumulatedMs: v._accumulatedMs || 0,
+      }]),
       _lastSheetUrl: state._lastSheetUrl || null,
       savedAt: Date.now(),
     };
@@ -852,12 +850,20 @@ function restoreState() {
     // Restore participants map — reset streak counters so API decides fresh status
     state.participants.clear();
     for (const [k, v] of (snap.participants || [])) {
+      const joinTime = v.joinTime ? new Date(v.joinTime) : null;
+      // On restore, finalize the active session duration from the last save
+      // (participant was present from joinTime until savedAt)
+      let accMs = v._accumulatedMs || 0;
+      if (v.present && joinTime && snap.savedAt) {
+        accMs += snap.savedAt - joinTime.getTime();
+      }
       state.participants.set(k, {
         ...v,
-        joinTime: v.joinTime ? new Date(v.joinTime) : null,
+        joinTime,
         trackedJoinTime: v.trackedJoinTime ? new Date(v.trackedJoinTime) : null,
         leaveTime: v.leaveTime ? new Date(v.leaveTime) : null,
-        _notPresentStreak: 0, // reset — let API determine status after refresh
+        _accumulatedMs: accMs,
+        _notPresentStreak: 0,
       });
     }
 
