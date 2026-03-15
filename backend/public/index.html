@@ -834,7 +834,7 @@
   </div>
 
   <!-- ── Participant list ── -->
-  <div class="list-header" id="list-header-participants">Participants</div>
+  <div class="list-header" id="list-header-participants" style="display:none">Participants</div>
   <div id="participant-list">
     <div class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -1847,6 +1847,8 @@ async function fetchCalendarAttendees() {
       const typeEl = document.getElementById('meeting-type');
       typeEl.textContent = 'Instant Meeting';
       typeEl.style.display = '';
+      // No tabs for instant meetings — show the list header instead
+      document.getElementById('list-header-participants').style.display = '';
     }
   } catch (e) {
     console.warn('[Attendance] Calendar fetch failed:', e.message);
