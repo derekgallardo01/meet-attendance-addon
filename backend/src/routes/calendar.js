@@ -62,6 +62,34 @@ router.get('/calendar-attendees', async (req, res) => {
       log.info('recurring meeting — picked closest instance', { total: matchingEvents.length, picked: matchedEvent.start.dateTime });
     }
 
+    // Fallback: if no event matches by meeting code, find the closest event
+    // happening right now (within 30 min) that has any Meet link
+    if (!matchedEvent) {
+      const now = Date.now();
+      const WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+      const nearbyEvents = events.filter(e => {
+        if (!e.start?.dateTime) return false;
+        if (!e.conferenceData && !e.hangoutLink) return false; // must have a Meet link
+        const start = new Date(e.start.dateTime).getTime();
+        const end = new Date(e.end?.dateTime || e.start.dateTime).getTime();
+        // Event is currently happening or within 30 min of starting
+        return (start - WINDOW_MS <= now && now <= end + WINDOW_MS);
+      });
+
+      if (nearbyEvents.length === 1) {
+        matchedEvent = nearbyEvents[0];
+        log.info('matched calendar event by time proximity', { title: matchedEvent.summary });
+      } else if (nearbyEvents.length > 1) {
+        // Pick the one closest to now
+        matchedEvent = nearbyEvents.reduce((closest, e) => {
+          const eStart = new Date(e.start.dateTime).getTime();
+          const closestStart = new Date(closest.start.dateTime).getTime();
+          return Math.abs(eStart - now) < Math.abs(closestStart - now) ? e : closest;
+        });
+        log.info('matched calendar event by time proximity (closest of multiple)', { title: matchedEvent.summary, total: nearbyEvents.length });
+      }
+    }
+
     if (!matchedEvent) {
       log.info('no calendar event matched — instant meeting', { meetingCode });
       return res.json({ attendees: [], isScheduled: false });
