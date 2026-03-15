@@ -1,6 +1,40 @@
 const { Firestore, FieldValue } = require('@google-cloud/firestore');
+const crypto = require('crypto');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
+
+// ── Token encryption (AES-256-GCM using SESSION_SECRET as key) ──
+const ALGO = 'aes-256-gcm';
+function deriveKey() {
+  return crypto.createHash('sha256').update(CONFIG.sessionSecret).digest();
+}
+
+function encryptToken(plaintext) {
+  if (!plaintext) return null;
+  const key = deriveKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(ALGO, key, iv);
+  let encrypted = cipher.update(plaintext, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  const tag = cipher.getAuthTag().toString('base64');
+  return `${iv.toString('base64')}:${tag}:${encrypted}`;
+}
+
+function decryptToken(ciphertext) {
+  if (!ciphertext || !ciphertext.includes(':')) return ciphertext; // not encrypted (legacy)
+  try {
+    const [ivB64, tagB64, data] = ciphertext.split(':');
+    const key = deriveKey();
+    const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivB64, 'base64'));
+    decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
+    let decrypted = decipher.update(data, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (err) {
+    log.warn('token decryption failed — may be legacy plaintext', { error: err.message });
+    return ciphertext; // return as-is if decryption fails (legacy unencrypted token)
+  }
+}
 
 let db = null;
 
@@ -122,7 +156,11 @@ async function persistExport({ meetingTitle, tabName, exportedAt, participantCou
 async function getUser(email) {
   try {
     const doc = await getDb().collection('users').doc(email.toLowerCase()).get();
-    return doc.exists ? doc.data() : null;
+    if (!doc.exists) return null;
+    const data = doc.data();
+    // Decrypt refresh token on read
+    if (data.refreshToken) data.refreshToken = decryptToken(data.refreshToken);
+    return data;
   } catch (err) {
     log.error('firestore: getUser failed', { email, error: err.message });
     return null;
@@ -141,7 +179,7 @@ async function upsertUser({ email, domain, displayName, refreshToken, sheetId })
       updatedAt: now,
       createdAt: now,
     };
-    if (refreshToken !== undefined) data.refreshToken = refreshToken;
+    if (refreshToken !== undefined) data.refreshToken = encryptToken(refreshToken);
     if (sheetId !== undefined) data.sheetId = sheetId;
 
     await firestore.collection('users').doc(email.toLowerCase()).set(data, { merge: true });

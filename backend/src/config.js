@@ -18,6 +18,7 @@ const CONFIG = {
 
   // General
   allowedOrigins:  (process.env.ALLOWED_ORIGINS || 'https://derekgallardo01.github.io,https://meet.google.com').split(','),
+  allowedDomains:  (process.env.ALLOWED_DOMAINS || 'theyachtgroup.com').split(','),
   port:             process.env.PORT || 8080,
   gcpProjectId:     process.env.GCP_PROJECT_ID || null,
 };

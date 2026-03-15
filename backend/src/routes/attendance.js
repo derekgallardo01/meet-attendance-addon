@@ -66,6 +66,14 @@ router.get('/attendance', async (req, res) => {
   const { conferenceId } = req.query;
   if (!conferenceId) return res.status(400).json({ error: 'conferenceId is required' });
 
+  // Domain authorization: if user is authenticated, their domain must be in allowedDomains
+  // If unauthenticated (service account fallback), restrict to allowedDomains via config
+  const userDomain = req.user?.domain;
+  if (userDomain && !CONFIG.allowedDomains.includes(userDomain)) {
+    log.warn('domain not authorized', { domain: userDomain, conferenceId });
+    return res.status(403).json({ error: 'Your organization is not authorized to use this service.' });
+  }
+
   try {
     const token = await getMeetToken();
     let records = [];
@@ -127,7 +135,7 @@ router.get('/attendance', async (req, res) => {
 
   } catch (err) {
     log.error('attendance fetch failed', { error: err.message });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch attendance data.' });
   }
 });
 

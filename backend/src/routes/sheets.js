@@ -222,7 +222,7 @@ router.post('/save-to-sheets', async (req, res) => {
 
   } catch (err) {
     log.error('sheets export failed', { error: err.message });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to export to Google Sheets.' });
   }
 });
 
