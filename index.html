@@ -811,6 +811,7 @@ function saveState() {
       tracking: state.tracking,
       sessionToken: state.sessionToken,
       userEmail: state.userEmail,
+      userDisplayName: state._selfDisplayName || null,
       signedIn: state.signedIn,
       participants: [...state.participants.entries()].map(([k, v]) => [k, {
         ...v,
@@ -906,6 +907,7 @@ async function handleAuthCode(response) {
     state.sessionToken = data.sessionToken;
     state.userEmail = data.email;
     state._selfEmail = data.email.toLowerCase();
+    state._selfDisplayName = (data.displayName || '').toLowerCase();
     state.signedIn = true;
     updateAuthUI();
     saveState();
@@ -1046,9 +1048,14 @@ async function initSDK() {
 
     // ── Self-presence detection ──
     // The user viewing this side panel is always in the meeting.
-    // Store their email so we can force them as "Present" even during API lag.
+    // Store their email + name so we can force them as "Present" even during API lag.
     if (state.userEmail) {
       state._selfEmail = state.userEmail.toLowerCase();
+    }
+    // Restore display name from saved state for self-detection fallback
+    const savedSnap = JSON.parse(sessionStorage.getItem('meet-attendance-state') || '{}');
+    if (savedSnap.userDisplayName) {
+      state._selfDisplayName = savedSnap.userDisplayName;
     }
 
     // ── Visibility-based presence detection ──
@@ -1248,7 +1255,12 @@ function mergeParticipants(incoming = []) {
       const newSessions = p.sessions || existing.sessions;
 
       // Self-user is ALWAYS present while viewing the side panel — skip all left-streak logic
-      const isSelf = state._selfEmail && (p.email?.toLowerCase() === state._selfEmail);
+      // Match by email (incoming or existing) OR by display name from the signed-in user
+      const pEmail = (p.email || existing.email || '').toLowerCase();
+      const isSelf = state._selfEmail && (
+        pEmail === state._selfEmail ||
+        (state._selfDisplayName && p.displayName?.toLowerCase() === state._selfDisplayName)
+      );
 
       if (isSelf) {
         if (!existing.present) changed = true;
