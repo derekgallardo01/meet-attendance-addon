@@ -34,7 +34,7 @@ function fmtRsvp(status) {
 }
 
 router.post('/save-to-sheets', async (req, res) => {
-  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime, conferenceId } = req.body;
+  const { meetingTitle, tabName: clientTabName, exportedAt, participants, calendarAttendees = [], meetingStartTime, conferenceId, timezone } = req.body;
   if (!participants?.length) return res.status(400).json({ error: 'participants array is required' });
 
   try {
@@ -99,12 +99,16 @@ router.post('/save-to-sheets', async (req, res) => {
       rsvpMap[a.email.toLowerCase()] = a.status;
     }
 
-    // Format helpers — display in US Eastern time
-    const fmtET = (iso) => {
+    // Format helpers — display in user's timezone (falls back to US Eastern)
+    const tz = timezone || 'America/New_York';
+    const tzAbbr = (() => { try {
+      return new Date().toLocaleString('en-US', { timeZone: tz, timeZoneName: 'short' }).split(' ').pop();
+    } catch { return 'ET'; } })();
+    const fmtTime = (iso) => {
       if (!iso) return '';
-      return new Date(iso).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }) + ' ET';
+      return new Date(iso).toLocaleString('en-US', { timeZone: tz, dateStyle: 'medium', timeStyle: 'short' }) + ' ' + tzAbbr;
     };
-    const fmtDate = iso => iso ? fmtET(iso) : '';
+    const fmtDate = iso => iso ? fmtTime(iso) : '';
     const totalInvited = calendarAttendees.length || participants.length;
     const totalAttended = participants.length;
     const attendanceRate = totalInvited > 0 ? Math.round((totalAttended / totalInvited) * 100) + '%' : 'N/A';
@@ -121,7 +125,7 @@ router.post('/save-to-sheets', async (req, res) => {
     ];
 
     // Build participant rows
-    const header = ['Name', 'Email', 'RSVP Status', 'Join Time (ET)', 'Leave Time (ET)', 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
+    const header = ['Name', 'Email', 'RSVP Status', `Join Time (${tzAbbr})`, `Leave Time (${tzAbbr})`, 'Duration (min)', 'Attendance %', 'Sessions', 'Status'];
 
     const attendedEmails = new Set();
     const attendedNames = new Set();
@@ -137,7 +141,7 @@ router.post('/save-to-sheets', async (req, res) => {
       const pct = (durRaw !== '' && meetDurationMin > 0)
         ? Math.min(100, Math.round((durRaw / meetDurationMin) * 100)) + '%'
         : (p.present ? '100%' : '');
-      return [sanitizeCell(p.displayName), sanitizeCell(p.email || ''), fmtRsvp(rsvpMap[email]), fmtET(p.joinTimeISO), fmtET(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
+      return [sanitizeCell(p.displayName), sanitizeCell(p.email || ''), fmtRsvp(rsvpMap[email]), fmtTime(p.joinTimeISO), fmtTime(p.leaveTimeISO), dur, pct, p.sessions, p.present ? 'Present' : 'Left'];
     });
 
     // Fix 2: Also capture emails from rows (includes manual overrides from frontend)
@@ -146,19 +150,14 @@ router.post('/save-to-sheets', async (req, res) => {
       if (email) attendedEmails.add(email);
     });
 
-    // No-shows: calendar invitees who never joined (check email AND name)
+    // No-shows: calendar invitees who never joined (check email AND exact full name)
+    // First-name fallback removed — too many false matches with common names.
+    // Directory API email enrichment handles the different-email-same-person case now.
     const noShows = calendarAttendees
       .filter(a => {
         if (attendedEmails.has(a.email.toLowerCase())) return false;
         const aName = (a.displayName || '').toLowerCase().trim();
         if (attendedNames.has(aName)) return false;
-        // First-name match as fallback (handles different email, same person)
-        const aFirst = aName.split(' ')[0];
-        if (aFirst) {
-          for (const name of attendedNames) {
-            if (name.split(' ')[0] === aFirst) return false;
-          }
-        }
         return true;
       })
       .map(a => [sanitizeCell(a.displayName), sanitizeCell(a.email), fmtRsvp(a.status), '', '', '', '0%', 0, 'Absent']);
