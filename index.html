@@ -1246,8 +1246,16 @@ function mergeParticipants(incoming = []) {
     } else {
       const existing = state.participants.get(key);
       const newSessions = p.sessions || existing.sessions;
-      // If session count went up, they rejoined — mark present immediately
-      if (newSessions > existing.sessions) {
+
+      // Self-user is ALWAYS present while viewing the side panel — skip all left-streak logic
+      const isSelf = state._selfEmail && (p.email?.toLowerCase() === state._selfEmail);
+
+      if (isSelf) {
+        if (!existing.present) changed = true;
+        existing.present = true;
+        existing._leftStreak = 0;
+      } else if (newSessions > existing.sessions) {
+        // Session count went up → they rejoined — mark present immediately
         if (!existing.present) { showActivityNote(p.displayName, 'rejoined'); changed = true; }
         existing.present = true;
         existing._leftStreak = 0;
@@ -1257,10 +1265,9 @@ function mergeParticipants(incoming = []) {
         existing._leftStreak = 0;
       } else if (existing.present) {
         // Meet API lags on rejoins — require 3 consecutive "not present" polls
-        // (~30s at 10s intervals) before marking as Left to avoid false negatives
+        // before marking as Left to avoid false negatives
         existing._leftStreak = (existing._leftStreak || 0) + 1;
-        // Show notification early (1st poll), but delay status change (3rd poll)
-        if (existing._leftStreak === 1) showActivityNote(p.displayName, 'left');
+        if (existing._leftStreak === 1) showActivityNote(p.displayName, 'may have left');
         if (existing._leftStreak >= 3) {
           existing.present = false;
           changed = true;
@@ -1274,18 +1281,6 @@ function mergeParticipants(incoming = []) {
 
   // Track when changes happen for adaptive polling
   if (changed) state._lastChangeTime = Date.now();
-
-  // Self-presence override: if the current user is viewing this panel,
-  // they are in the meeting — force them as Present regardless of API lag
-  if (state._selfEmail) {
-    for (const [, p] of state.participants) {
-      if (p.email?.toLowerCase() === state._selfEmail && !p.present) {
-        p.present = true;
-        p._leftStreak = 0;
-        changed = true;
-      }
-    }
-  }
 
   // Update meeting start time to earliest API join time (more accurate than local timer)
   const allJoinTimes = [...state.participants.values()]
