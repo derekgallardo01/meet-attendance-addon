@@ -1802,7 +1802,8 @@ function switchTab(tab) {
   document.getElementById('tab-participants').classList.toggle('active', tab === 'participants');
   document.getElementById('tab-invited').classList.toggle('active', tab === 'invited');
 
-  document.getElementById('list-header-participants').style.display = tab === 'participants' ? '' : 'none';
+  // Participants list header stays hidden when tabs are visible (tab itself is the label)
+  document.getElementById('list-header-participants').style.display = 'none';
   document.getElementById('participant-list').style.display = tab === 'participants' ? '' : 'none';
   document.getElementById('list-header-invited').style.display = tab === 'invited' ? '' : 'none';
   document.getElementById('invited-list').style.display = tab === 'invited' ? '' : 'none';
