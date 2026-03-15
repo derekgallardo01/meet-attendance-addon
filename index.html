@@ -1018,11 +1018,22 @@ async function initSDK() {
 
     // meetingCode is the meeting code e.g. "abc-defg-hij"
     // meetingId is the globally unique ID used by the REST API
-    state.conferenceId = meetingInfo.meetingCode || meetingInfo.meetingId || null;
+    const currentMeetingCode = meetingInfo.meetingCode || meetingInfo.meetingId || null;
+    state.conferenceId = currentMeetingCode;
     state.meetingTitle = meetingInfo.meetingTitle || meetingInfo.title || 'Google Meet';
 
     // Try to restore previous session state (survives panel refreshes)
     const wasTracking = restoreState();
+
+    // If the meeting changed since last save, clear stale participant data
+    if (state.conferenceId !== currentMeetingCode) {
+      console.log('[Attendance] Meeting changed, clearing old participants');
+      state.participants.clear();
+      state.startTime = null;
+      state._lastSheetUrl = null;
+    }
+    // Always use the current meeting's conferenceId (restoreState may have overwritten it)
+    state.conferenceId = currentMeetingCode;
 
     document.getElementById('meeting-title').textContent = state.meetingTitle;
 
