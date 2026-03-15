@@ -779,7 +779,7 @@
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       Start
     </button>
-    <button class="btn-secondary" id="btn-refresh" onclick="refreshAttendance()" disabled>
+    <button class="btn-secondary" id="btn-refresh" onclick="manualSync()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       Sync
     </button>
@@ -1280,6 +1280,14 @@ function stopTracking() {
    participantSessions) using a service account and returns JSON.
    Shape expected:  { participants: [{ displayName, joinTime, leaveTime, present }] }
 ═══════════════════════════════════════════════════════════════ */
+async function manualSync() {
+  // Re-fetch calendar data for updated guest list
+  if (state.conferenceId && state._isScheduled) {
+    fetchCalendarAttendees();
+  }
+  refreshAttendance();
+}
+
 async function refreshAttendance() {
   if (!state.tracking) return;
   setStatus('loading', 'Refreshing…');
@@ -1321,6 +1329,7 @@ async function refreshAttendance() {
     updateLastRefresh();
     setStatus('active', `Tracking · ${state.participants.size} seen`);
     saveState();
+
 
   } catch (err) {
     console.error(err);
