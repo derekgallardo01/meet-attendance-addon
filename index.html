@@ -1251,6 +1251,7 @@ function mergeParticipants(incoming = []) {
         leaveTime:      p.leaveTime ? new Date(p.leaveTime) : null,
         present:        apiPresent,
         sessions:       1,
+        _accumulatedMs: 0,
       });
       if (apiPresent) showActivityNote(p.displayName, 'joined');
     } else {
@@ -1274,11 +1275,19 @@ function mergeParticipants(incoming = []) {
         existing._leftStreak = 0;
       } else if (newSessions > existing.sessions) {
         // Session count went up → they rejoined — mark present immediately
-        if (!existing.present) { showActivityNote(p.displayName, 'rejoined'); changed = true; }
+        if (!existing.present) {
+          showActivityNote(p.displayName, 'rejoined');
+          existing.joinTime = p.joinTime ? new Date(p.joinTime) : new Date(); // new session start
+          changed = true;
+        }
         existing.present = true;
         existing._leftStreak = 0;
       } else if (apiPresent) {
-        if (!existing.present) { showActivityNote(p.displayName, 'rejoined'); changed = true; }
+        if (!existing.present) {
+          showActivityNote(p.displayName, 'rejoined');
+          existing.joinTime = p.joinTime ? new Date(p.joinTime) : new Date(); // new session start
+          changed = true;
+        }
         existing.present = true;
         existing._leftStreak = 0;
       } else if (existing.present) {
@@ -1287,6 +1296,11 @@ function mergeParticipants(incoming = []) {
         existing._leftStreak = (existing._leftStreak || 0) + 1;
         if (existing._leftStreak === 1) showActivityNote(p.displayName, 'may have left');
         if (existing._leftStreak >= 3) {
+          // Accumulate session duration before marking as Left
+          if (existing.joinTime) {
+            existing._accumulatedMs = (existing._accumulatedMs || 0) +
+              (Date.now() - existing.joinTime.getTime());
+          }
           existing.present = false;
           changed = true;
         }
@@ -1356,7 +1370,11 @@ function renderList() {
   container.innerHTML = sorted.map(p => {
     const initials = p.displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     const joinStr  = p.joinTime ? fmtTime(p.joinTime) : '—';
-    const durStr   = p.joinTime ? fmtDur(p.joinTime, p.leaveTime || new Date()) : '';
+    // Total duration: accumulated past sessions + current active session
+    const pastDur = p._accumulatedMs || 0;
+    const activeDur = p.present && p.joinTime ? (Date.now() - p.joinTime.getTime()) : 0;
+    const totalMs = pastDur + activeDur;
+    const durStr = totalMs > 0 ? fmtDurMs(totalMs) : (p.joinTime ? '< 1m' : '');
     const leaveStr = (!p.present && p.leaveTime) ? ' · Left ' + fmtTime(p.leaveTime) : '';
     const emailStr = p.email ? `<div class="participant-meta">${escHtml(p.email)}</div>` : '';
     return `
@@ -2020,6 +2038,13 @@ function fmtTime(d) {
 
 function fmtDur(start, end) {
   const m = Math.floor((end - start) / 60000);
+  if (m < 60) return `${m}m`;
+  return `${Math.floor(m/60)}h ${m%60}m`;
+}
+
+function fmtDurMs(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return '< 1m';
   if (m < 60) return `${m}m`;
   return `${Math.floor(m/60)}h ${m%60}m`;
 }
