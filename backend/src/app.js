@@ -64,11 +64,6 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-// Sentry test — triggers a real exception that Sentry captures
-app.get('/debug-sentry', function mainHandler(_req, _res) {
-  throw new Error('Sentry test error from Cloud Run');
-});
-
 // Sentry error handler — must be after all routes
 Sentry.setupExpressErrorHandler(app);
 
