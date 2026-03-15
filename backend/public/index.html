@@ -678,6 +678,7 @@
     <div class="header-info">
       <div class="app-title" id="app-title-tap">Attendance</div>
       <div id="meeting-title">Not in a meeting</div>
+      <div id="meeting-type" style="font-size:.65rem;color:#9ca3af;margin-top:1px;display:none"></div>
     </div>
   </header>
 
@@ -1215,6 +1216,30 @@ async function refreshAttendance() {
       data = demoParticipants();
     }
 
+    // One-time calendar check to detect meeting type (scheduled vs instant)
+    if (state.conferenceId && !state._calendarChecked) {
+      state._calendarChecked = true;
+      authFetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`)
+        .then(r => r.ok ? r.json() : { isScheduled: false })
+        .then(cal => {
+          const typeEl = document.getElementById('meeting-type');
+          if (cal.isScheduled) {
+            state.meetingTitle = cal.eventTitle || 'Scheduled Meeting';
+            document.getElementById('meeting-title').textContent = state.meetingTitle;
+            const startStr = cal.eventStart ? new Date(cal.eventStart).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+            const endStr = cal.eventEnd ? new Date(cal.eventEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+            const timeRange = startStr && endStr ? ` · ${startStr} – ${endStr}` : '';
+            typeEl.textContent = `Scheduled Event${timeRange}`;
+            state._eventStart = cal.eventStart;
+            state._eventEnd = cal.eventEnd;
+          } else {
+            typeEl.textContent = 'Instant Meeting';
+          }
+          typeEl.style.display = '';
+        })
+        .catch(() => {}); // silent fail
+    }
+
     // Merge in simulated participants if injection is active (demo video mode)
     if (inject.active) {
       data.participants = [...data.participants, ...getInjectedParticipants()];
@@ -1430,10 +1455,22 @@ async function saveToSheets() {
     const calRes = await authFetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
     const calData = calRes.ok ? await calRes.json() : { isScheduled: false, attendees: [] };
 
-    // Use calendar event title if available
-    if (calData.isScheduled && calData.eventTitle) {
-      state.meetingTitle = calData.eventTitle;
-      document.getElementById('meeting-title').textContent = calData.eventTitle;
+    // Display meeting type + event details in header
+    const typeEl = document.getElementById('meeting-type');
+    if (calData.isScheduled) {
+      state.meetingTitle = calData.eventTitle || 'Scheduled Meeting';
+      document.getElementById('meeting-title').textContent = state.meetingTitle;
+      // Show scheduled time range
+      const startStr = calData.eventStart ? new Date(calData.eventStart).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      const endStr = calData.eventEnd ? new Date(calData.eventEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      const timeRange = startStr && endStr ? ` · ${startStr} – ${endStr}` : '';
+      typeEl.textContent = `Scheduled Event${timeRange}`;
+      typeEl.style.display = '';
+      state._eventStart = calData.eventStart;
+      state._eventEnd = calData.eventEnd;
+    } else {
+      typeEl.textContent = 'Instant Meeting';
+      typeEl.style.display = '';
     }
 
     if (calData.isScheduled && calData.attendees.length > 0) {
@@ -1596,6 +1633,9 @@ async function doExportToSheets(emailMap, calendarAttendees = []) {
     conferenceId: state.conferenceId,
     exportedAt:   now.toISOString(),
     meetingStartTime: state.startTime ? state.startTime.toISOString() : null,
+    meetingType: state._eventStart ? 'scheduled' : 'instant',
+    eventStart: state._eventStart || null,
+    eventEnd: state._eventEnd || null,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     calendarAttendees,
     participants: [...state.participants.values()].map(p => {
