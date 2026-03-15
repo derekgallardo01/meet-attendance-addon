@@ -300,6 +300,69 @@
     }
 
     /* ── participant list ────────────────────────────────────── */
+    /* ── tabs ───────────────────────────────────────────────── */
+    .tab-bar {
+      display: none; /* hidden for instant meetings */
+      padding: 0 16px;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    .tab-bar.visible { display: flex; }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+    .tab-badge {
+      display: inline-block;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .65rem;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-left: 4px;
+    }
+    .tab-btn.active .tab-badge { background: rgba(74,222,128,.15); color: var(--accent); }
+
+    /* ── invited list ─────────────────────────────────────── */
+    .invited-card {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .invited-card .rsvp-badge {
+      font-size: .65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .rsvp-accepted { background: rgba(74,222,128,.15); color: #4ade80; }
+    .rsvp-declined { background: rgba(248,81,73,.15); color: #f85149; }
+    .rsvp-tentative { background: rgba(255,193,7,.15); color: #ffc107; }
+    .rsvp-noresponse { background: rgba(156,163,175,.15); color: #9ca3af; }
+    .invited-status {
+      font-size: .65rem;
+      margin-left: auto;
+      color: var(--muted);
+    }
+    .invited-status.joined { color: #4ade80; }
+
     .list-header {
       padding: 0 16px 6px;
       display: flex;
@@ -760,8 +823,18 @@
     <div class="search-stats" id="search-stats"></div>
   </div>
 
+  <!-- ── Tabs (visible only for scheduled events) ── -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" id="tab-participants" onclick="switchTab('participants')">
+      Participants <span class="tab-badge" id="tab-count-participants">0</span>
+    </button>
+    <button class="tab-btn" id="tab-invited" onclick="switchTab('invited')">
+      Invited <span class="tab-badge" id="tab-count-invited">0</span>
+    </button>
+  </div>
+
   <!-- ── Participant list ── -->
-  <div class="list-header">Participants</div>
+  <div class="list-header" id="list-header-participants">Participants</div>
   <div id="participant-list">
     <div class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -773,6 +846,10 @@
       <span>Press <strong>Start</strong> to begin tracking</span>
     </div>
   </div>
+
+  <!-- ── Invited list (hidden by default) ── -->
+  <div class="list-header" id="list-header-invited" style="display:none">Invited Guests</div>
+  <div id="invited-list" style="display:none"></div>
 
   <!-- ── Activity Feed ── -->
   <div id="activity-feed"></div>
@@ -1099,6 +1176,7 @@ async function initSDK() {
       setStatus('active', `Tracking · ${state.participants.size} seen`);
       showSearchBar();
       startDurationTimer();
+      fetchCalendarAttendees(); // detect scheduled event + show tabs
       renderList();
       updateSummary();
       clearTimeout(state.refreshTimer);
@@ -1174,6 +1252,7 @@ function startTracking() {
   setStatus('active', 'Tracking attendance…');
   showSearchBar();
   startDurationTimer();
+  fetchCalendarAttendees(); // detect scheduled event + show tabs
   refreshAttendance();
 
   // Adaptive polling with countdown display
@@ -1229,30 +1308,6 @@ async function refreshAttendance() {
       data = demoParticipants();
     }
 
-    // One-time calendar check to detect meeting type (scheduled vs instant)
-    if (state.conferenceId && !state._calendarChecked) {
-      state._calendarChecked = true;
-      authFetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`)
-        .then(r => r.ok ? r.json() : { isScheduled: false })
-        .then(cal => {
-          const typeEl = document.getElementById('meeting-type');
-          if (cal.isScheduled) {
-            state.meetingTitle = cal.eventTitle || 'Scheduled Meeting';
-            document.getElementById('meeting-title').textContent = state.meetingTitle;
-            const startStr = cal.eventStart ? new Date(cal.eventStart).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
-            const endStr = cal.eventEnd ? new Date(cal.eventEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
-            const timeRange = startStr && endStr ? ` · ${startStr} – ${endStr}` : '';
-            typeEl.textContent = `Scheduled Event${timeRange}`;
-            state._eventStart = cal.eventStart;
-            state._eventEnd = cal.eventEnd;
-          } else {
-            typeEl.textContent = 'Instant Meeting';
-          }
-          typeEl.style.display = '';
-        })
-        .catch(() => {}); // silent fail
-    }
-
     // Merge in simulated participants if injection is active (demo video mode)
     if (inject.active) {
       data.participants = [...data.participants, ...getInjectedParticipants()];
@@ -1262,6 +1317,7 @@ async function refreshAttendance() {
     mergeParticipants(data.participants);
     renderList();
     updateSummary();
+    updateTabCounts();
     updateLastRefresh();
     setStatus('active', `Tracking · ${state.participants.size} seen`);
     saveState();
@@ -1734,6 +1790,130 @@ function updateSearchStats() {
 
 function showSearchBar() {
   document.getElementById('search-bar').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABS — Participants / Invited (for scheduled events)
+═══════════════════════════════════════════════════════════════ */
+let _activeTab = 'participants';
+
+function switchTab(tab) {
+  _activeTab = tab;
+  document.getElementById('tab-participants').classList.toggle('active', tab === 'participants');
+  document.getElementById('tab-invited').classList.toggle('active', tab === 'invited');
+
+  document.getElementById('list-header-participants').style.display = tab === 'participants' ? '' : 'none';
+  document.getElementById('participant-list').style.display = tab === 'participants' ? '' : 'none';
+  document.getElementById('list-header-invited').style.display = tab === 'invited' ? '' : 'none';
+  document.getElementById('invited-list').style.display = tab === 'invited' ? '' : 'none';
+
+  if (tab === 'invited') renderInvitedList();
+}
+
+function showTabs() {
+  document.getElementById('tab-bar').classList.add('visible');
+}
+
+// Fetch calendar attendees once when tracking starts (for live invited tab)
+async function fetchCalendarAttendees() {
+  if (!state.conferenceId || !state.sessionToken) return;
+  try {
+    const res = await authFetch(`${state.backendUrl}/calendar-attendees?meetingCode=${encodeURIComponent(state.conferenceId)}`);
+    if (!res.ok) return;
+    const cal = await res.json();
+    if (cal.isScheduled && cal.attendees?.length > 0) {
+      state.calendarAttendees = cal.attendees;
+      state._isScheduled = true;
+      if (cal.eventTitle) {
+        state.meetingTitle = cal.eventTitle;
+        document.getElementById('meeting-title').textContent = cal.eventTitle;
+      }
+      // Show tabs and update counts
+      showTabs();
+      document.getElementById('tab-count-invited').textContent = cal.attendees.length;
+      // Update meeting type display
+      const typeEl = document.getElementById('meeting-type');
+      const startStr = cal.eventStart ? new Date(cal.eventStart).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      const endStr = cal.eventEnd ? new Date(cal.eventEnd).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      const timeRange = startStr && endStr ? ` · ${startStr} – ${endStr}` : '';
+      typeEl.textContent = `Scheduled Event${timeRange}`;
+      typeEl.style.display = '';
+      state._eventStart = cal.eventStart;
+      state._eventEnd = cal.eventEnd;
+    } else {
+      const typeEl = document.getElementById('meeting-type');
+      typeEl.textContent = 'Instant Meeting';
+      typeEl.style.display = '';
+    }
+  } catch (e) {
+    console.warn('[Attendance] Calendar fetch failed:', e.message);
+  }
+}
+
+function renderInvitedList() {
+  const container = document.getElementById('invited-list');
+  const attendees = state.calendarAttendees || [];
+
+  if (attendees.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>No calendar event found</span>
+      </div>`;
+    return;
+  }
+
+  // Build a set of attended emails for matching
+  const attendedEmails = new Set();
+  const attendedNames = new Set();
+  for (const [, p] of state.participants) {
+    if (p.email) attendedEmails.add(p.email.toLowerCase());
+    attendedNames.add(p.displayName.toLowerCase().trim());
+  }
+
+  container.innerHTML = attendees.map(a => {
+    const email = a.email.toLowerCase();
+    const name = (a.displayName || a.email.split('@')[0]);
+    const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+    // Check if this invitee has joined
+    const joinedByEmail = attendedEmails.has(email);
+    const joinedByName = attendedNames.has(name.toLowerCase().trim());
+    const joined = joinedByEmail || joinedByName;
+
+    // RSVP badge
+    let rsvpClass = 'rsvp-noresponse';
+    let rsvpText = 'No Response';
+    switch (a.status) {
+      case 'accepted':    rsvpClass = 'rsvp-accepted'; rsvpText = 'Accepted'; break;
+      case 'declined':    rsvpClass = 'rsvp-declined'; rsvpText = 'Declined'; break;
+      case 'tentative':   rsvpClass = 'rsvp-tentative'; rsvpText = 'Tentative'; break;
+      case 'needsAction': rsvpClass = 'rsvp-noresponse'; rsvpText = 'Awaiting'; break;
+    }
+
+    return `
+      <div class="invited-card">
+        <div class="avatar" style="width:28px;height:28px;font-size:.6rem">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="participant-name">${escHtml(name)}</div>
+          <div class="participant-meta">${escHtml(a.email)}</div>
+        </div>
+        <span class="rsvp-badge ${rsvpClass}">${rsvpText}</span>
+        <span class="invited-status ${joined ? 'joined' : ''}">${joined ? 'Joined' : 'Not yet'}</span>
+      </div>`;
+  }).join('');
+}
+
+// Update tab counts whenever participant list changes
+function updateTabCounts() {
+  document.getElementById('tab-count-participants').textContent = state.participants.size;
+  if (state.calendarAttendees) {
+    document.getElementById('tab-count-invited').textContent = state.calendarAttendees.length;
+  }
+  // Re-render invited tab if active (to update joined status)
+  if (_activeTab === 'invited') renderInvitedList();
 }
 
 /* ═══════════════════════════════════════════════════════════════
