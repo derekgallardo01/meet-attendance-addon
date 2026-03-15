@@ -26,13 +26,22 @@ router.post('/oauth/exchange', async (req, res) => {
     const domain = payload.hd || email.split('@')[1];
     const displayName = payload.name || email;
 
-    // Store user + refresh token in Firestore
+    // Store user + tokens in Firestore
     await upsertUser({
       email,
       domain,
       displayName,
       refreshToken: tokens.refresh_token || undefined,
     });
+
+    // Always store the fresh access token from the exchange
+    if (tokens.access_token) {
+      const { updateUserTokens } = require('../services/firestore');
+      await updateUserTokens(email, {
+        accessToken: tokens.access_token,
+        tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600 * 1000),
+      });
+    }
 
     // Issue backend session JWT (8 hour expiry — covers full-day meetings)
     const sessionToken = jwt.sign(

@@ -868,6 +868,7 @@ function signInWithGoogle() {
     client_id: GOOGLE_CLIENT_ID,
     scope: OAUTH_SCOPES,
     ux_mode: 'popup',
+    access_type: 'offline',
     callback: handleAuthCode,
   });
   client.requestCode();
