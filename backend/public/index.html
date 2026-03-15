@@ -942,7 +942,8 @@ async function signOut() {
 }
 
 function updateAuthUI() {
-  const bar = document.getElementById('auth-status');
+  const bar = document.getElementById('auth-bar');
+  if (!bar) return; // guard against missing element
   if (state.signedIn) {
     bar.innerHTML = `
       <span class="auth-email">${escHtml(state.userEmail)}</span>
