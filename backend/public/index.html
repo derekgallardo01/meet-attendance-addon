@@ -779,7 +779,7 @@ const APP_CONFIG = {
   backendUrl: '/api',
 };
 const GOOGLE_CLIENT_ID = APP_CONFIG.googleClientId;
-const OAUTH_SCOPES = 'openid email profile https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const OAUTH_SCOPES = 'openid email profile https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/meetings.space.readonly';
 
 const state = {
   tracking:      false,
@@ -865,6 +865,11 @@ function authHeaders() {
   return h;
 }
 
+function triggerSignIn() {
+  state._startAfterSignIn = true;
+  signInWithGoogle();
+}
+
 function signInWithGoogle() {
   if (!window.google?.accounts?.oauth2) {
     toast('Google Sign-In not loaded yet');
@@ -903,6 +908,12 @@ async function handleAuthCode(response) {
     updateAuthUI();
     saveState();
     toast('Signed in as ' + data.email);
+
+    // Auto-start tracking if sign-in was triggered by Start button
+    if (state._startAfterSignIn) {
+      state._startAfterSignIn = false;
+      startTracking();
+    }
   } catch (err) {
     console.error('Auth exchange failed:', err);
     toast('Sign-in failed: ' + err.message);
@@ -977,10 +988,16 @@ async function initSDK() {
     console.log('[Attendance] waitForMeet result:', ready, 'window.meet =', typeof window.meet);
 
     if (!ready) {
-      // Not inside Meet — show simulation controls
-      document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
-      setStatus('loading', 'Demo mode — configure simulation below');
-      showSimControls();
+      // Not inside Meet — show simulation controls only if ?demo=1
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('demo') === '1') {
+        document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+        setStatus('loading', 'Demo mode — configure simulation below');
+        showSimControls();
+      } else {
+        document.getElementById('meeting-title').textContent = 'Meet Attendance Tracker';
+        setStatus('loading', 'Open this add-on inside a Google Meet call to start tracking.');
+      }
       return;
     }
 
@@ -1079,6 +1096,13 @@ function schedulePoll() {
 }
 
 function startTracking() {
+  // Require sign-in for Meet API access (user OAuth token needed)
+  if (!state.sessionToken && !state.simulating) {
+    toast('Please sign in to start tracking');
+    triggerSignIn();
+    return;
+  }
+
   state.tracking  = true;
   state.startTime = new Date();
   state.participants.clear();
@@ -1130,7 +1154,16 @@ async function refreshAttendance() {
       const res = await authFetch(
         `${state.backendUrl}/attendance?conferenceId=${encodeURIComponent(state.conferenceId)}`
       );
-      if (!res.ok) throw new Error(`Backend error ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        // Handle missing Meet scope — prompt re-consent
+        if (errBody.error === 'scope_required') {
+          toast('Additional permission needed — please sign in again');
+          triggerSignIn();
+          return;
+        }
+        throw new Error(`Backend error ${res.status}`);
+      }
       data = await res.json();
     } else {
       // Dev/preview fallback — synthetic demo data
