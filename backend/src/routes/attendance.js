@@ -121,22 +121,39 @@ router.get('/attendance', async (req, res) => {
     const rawParticipants = await meetGetAll(`${conferenceRecord.name}/participants`, token, 'participants');
     log.info('participants found', { count: rawParticipants.length });
 
-    const participants = await Promise.all(
-      rawParticipants.map(async (p) => {
-        const sessions = await meetGetAll(`${p.name}/participantSessions`, token, 'participantSessions');
-        const joinTimes  = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
-        const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
-        return {
-          participantId: p.name,
-          displayName:   p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
-          email:         p.user?.email || p.signedinUser?.email || '',
-          joinTime:      joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
-          leaveTime:     leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
-          present:       sessions.some(s => !s.endTime),
-          sessions:      sessions.length,
-        };
-      })
-    );
+    // Fetch participant sessions in batches of 10 to avoid rate limits
+    const BATCH_SIZE = 10;
+    const participants = [];
+    for (let i = 0; i < rawParticipants.length; i += BATCH_SIZE) {
+      const batch = rawParticipants.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (p) => {
+          try {
+            const sessions = await meetGetAll(`${p.name}/participantSessions`, token, 'participantSessions');
+            const joinTimes  = sessions.map(s => s.startTime).filter(Boolean).map(t => new Date(t));
+            const leaveTimes = sessions.map(s => s.endTime).filter(Boolean).map(t => new Date(t));
+            return {
+              participantId: p.name,
+              displayName:   p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
+              email:         p.user?.email || p.signedinUser?.email || '',
+              joinTime:      joinTimes.length  > 0 ? new Date(Math.min(...joinTimes)).toISOString()  : null,
+              leaveTime:     leaveTimes.length > 0 ? new Date(Math.max(...leaveTimes)).toISOString() : null,
+              present:       sessions.some(s => !s.endTime),
+              sessions:      sessions.length,
+            };
+          } catch (err) {
+            log.warn('failed to fetch sessions for participant', { name: p.name, error: err.message });
+            return {
+              participantId: p.name,
+              displayName:   p.user?.displayName || p.signedinUser?.displayName || 'Unknown',
+              email:         p.user?.email || p.signedinUser?.email || '',
+              joinTime: null, leaveTime: null, present: true, sessions: 1,
+            };
+          }
+        })
+      );
+      participants.push(...batchResults);
+    }
 
     // Enrich missing emails via Workspace Directory API (only when using service account)
     if (!req.user?.accessToken) {
