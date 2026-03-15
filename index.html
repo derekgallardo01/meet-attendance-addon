@@ -850,19 +850,14 @@ function restoreState() {
     // Restore participants map — reset streak counters so API decides fresh status
     state.participants.clear();
     for (const [k, v] of (snap.participants || [])) {
-      const joinTime = v.joinTime ? new Date(v.joinTime) : null;
-      // On restore, finalize the active session duration from the last save
-      // (participant was present from joinTime until savedAt)
-      let accMs = v._accumulatedMs || 0;
-      if (v.present && joinTime && snap.savedAt) {
-        accMs += snap.savedAt - joinTime.getTime();
-      }
       state.participants.set(k, {
         ...v,
-        joinTime,
+        joinTime: v.joinTime ? new Date(v.joinTime) : null,
         trackedJoinTime: v.trackedJoinTime ? new Date(v.trackedJoinTime) : null,
         leaveTime: v.leaveTime ? new Date(v.leaveTime) : null,
-        _accumulatedMs: accMs,
+        // _accumulatedMs holds ONLY completed session time (set on leave)
+        // Active session time is calculated live in renderList from joinTime → now
+        _accumulatedMs: v._accumulatedMs || 0,
         _notPresentStreak: 0,
       });
     }
