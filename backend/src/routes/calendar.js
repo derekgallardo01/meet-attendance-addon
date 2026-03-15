@@ -34,6 +34,7 @@ router.get('/calendar-attendees', async (req, res) => {
       timeMax,
       singleEvents: true,
       maxResults:   250,
+      conferenceDataVersion: 1, // ensure conferenceData is populated
     });
 
     const events = eventsResp.data.items || [];
