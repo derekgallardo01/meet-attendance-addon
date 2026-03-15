@@ -1,11 +1,16 @@
-const Sentry = require('@sentry/node');
+let Sentry;
+try { Sentry = require('@sentry/node'); } catch { Sentry = null; }
 
 function emit(severity, consoleFn, msg, data) {
   const entry = { severity, msg, ...data, ts: new Date().toISOString() };
   consoleFn(JSON.stringify(entry));
-  // Also send errors/warnings to Sentry as breadcrumbs
-  if (severity === 'ERROR') {
-    Sentry.captureMessage(msg, { level: 'error', extra: data });
+  // Send errors to Sentry
+  if (severity === 'ERROR' && Sentry) {
+    Sentry.withScope(scope => {
+      scope.setLevel('error');
+      if (data) scope.setExtras(data);
+      Sentry.captureMessage(msg);
+    });
   }
 }
 
