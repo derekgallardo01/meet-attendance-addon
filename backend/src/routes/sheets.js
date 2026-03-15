@@ -48,6 +48,18 @@ router.post('/save-to-sheets', async (req, res) => {
     let spreadsheetId;
     if (req.user) {
       spreadsheetId = await getUserSheetId(req.user.email);
+
+      // Verify the stored spreadsheet still exists (user may have deleted it)
+      if (spreadsheetId) {
+        try {
+          await sheets.spreadsheets.get({ spreadsheetId, fields: 'spreadsheetId' });
+        } catch (e) {
+          log.warn('stored spreadsheet not found, creating new one', { email: req.user.email, spreadsheetId });
+          spreadsheetId = null;
+          await setUserSheetId(req.user.email, null);
+        }
+      }
+
       if (!spreadsheetId) {
         // First export: create folder + spreadsheet in user's Drive
         const drive = google.drive({ version: 'v3', auth: sheetsAuth });
