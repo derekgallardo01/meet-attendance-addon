@@ -47,7 +47,7 @@ router.post('/save-to-sheets', async (req, res) => {
     // Resolve spreadsheet ID: per-user sheet (OAuth) or shared sheet (legacy)
     let spreadsheetId;
     if (req.user) {
-      spreadsheetId = await getUserSheetId(req.user.email);
+      spreadsheetId = await getUserSheetId(req.user.domain, req.user.email);
 
       // Verify the stored spreadsheet still exists (user may have deleted it)
       if (spreadsheetId) {
@@ -56,7 +56,7 @@ router.post('/save-to-sheets', async (req, res) => {
         } catch (e) {
           log.warn('stored spreadsheet not found, creating new one', { email: req.user.email, spreadsheetId });
           spreadsheetId = null;
-          await setUserSheetId(req.user.email, null);
+          await setUserSheetId(req.user.domain, req.user.email, null);
         }
       }
 
@@ -103,7 +103,7 @@ router.post('/save-to-sheets', async (req, res) => {
           fields: 'id, parents',
         });
 
-        await setUserSheetId(req.user.email, spreadsheetId);
+        await setUserSheetId(req.user.domain, req.user.email, spreadsheetId);
         log.info('created user spreadsheet in folder', { email: req.user.email, spreadsheetId, folderId });
       }
     } else {
@@ -257,7 +257,8 @@ router.post('/save-to-sheets', async (req, res) => {
     res.json({ success: true, sheetUrl });
 
     // Fire-and-forget: audit trail for exports
-    persistExport({
+    const domain = req.user?.domain || CONFIG.allowedDomains?.[0] || 'default';
+    persistExport(domain, {
       meetingTitle: meetingTitle || 'Unknown',
       tabName,
       exportedAt,
