@@ -676,7 +676,7 @@
       </svg>
     </div>
     <div class="header-info">
-      <div class="app-title">Attendance</div>
+      <div class="app-title" id="app-title-tap">Attendance</div>
       <div id="meeting-title">Not in a meeting</div>
     </div>
   </header>
@@ -1213,6 +1213,11 @@ async function refreshAttendance() {
     } else {
       // Dev/preview fallback — synthetic demo data
       data = demoParticipants();
+    }
+
+    // Merge in simulated participants if injection is active (demo video mode)
+    if (inject.active) {
+      data.participants = [...data.participants, ...getInjectedParticipants()];
     }
 
     const hadParticipantsBefore = state.participants.size > 0;
@@ -1982,6 +1987,97 @@ function updateSimProgress() {
   const secs = sim.elapsed % 60;
   const el = document.getElementById('sim-progress');
   if (el) el.textContent = `${joined}/${sim.targetCount} joined · ${left} left · ${mins}m ${secs}s simulated`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IN-MEETING PARTICIPANT INJECTION (for demo video recording)
+   Activated by tapping "Attendance" title 5 times rapidly
+═══════════════════════════════════════════════════════════════ */
+const inject = { active: false, elapsed: 0, pool: [], timer: null, speed: 5, count: 50 };
+let _titleTapCount = 0, _titleTapTimer = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const titleEl = document.getElementById('app-title-tap');
+  if (titleEl) {
+    titleEl.addEventListener('click', () => {
+      _titleTapCount++;
+      clearTimeout(_titleTapTimer);
+      _titleTapTimer = setTimeout(() => { _titleTapCount = 0; }, 2000);
+      if (_titleTapCount >= 5) {
+        _titleTapCount = 0;
+        if (!inject.active) {
+          activateInjection();
+        } else {
+          deactivateInjection();
+        }
+      }
+    });
+  }
+});
+
+function activateInjection() {
+  inject.active = true;
+  inject.elapsed = 0;
+  inject.pool = generateSimSchedule(inject.count);
+  inject.startTime = Date.now();
+  toast(`Demo mode: injecting ${inject.count} simulated participants (${inject.speed}x speed)`);
+
+  // Tick every second at inject.speed multiplier
+  clearInterval(inject.timer);
+  inject.timer = setInterval(() => {
+    inject.elapsed += inject.speed; // advance N simulated seconds per real second
+  }, 1000);
+}
+
+function deactivateInjection() {
+  inject.active = false;
+  inject.elapsed = 0;
+  inject.pool = [];
+  clearInterval(inject.timer);
+  // Remove simulated participants from state
+  for (const [key] of [...state.participants]) {
+    if (key.startsWith('sim/')) state.participants.delete(key);
+  }
+  renderList();
+  updateSummary();
+  toast('Demo mode deactivated');
+}
+
+function getInjectedParticipants() {
+  if (!inject.active) return [];
+  const now = inject.elapsed;
+  const baseTime = inject.startTime;
+  const participants = [];
+
+  for (const p of inject.pool) {
+    if (now < p.joinDelay) continue;
+
+    const joinTime = new Date(baseTime + p.joinDelay * 1000);
+    let present = true;
+    let leaveTime = null;
+    let sessions = 1;
+
+    if (p.leaveDelay && now >= p.leaveDelay) {
+      leaveTime = new Date(baseTime + p.leaveDelay * 1000);
+      present = false;
+      if (p.rejoinDelay && now >= p.rejoinDelay) {
+        present = true;
+        leaveTime = null;
+        sessions = 2;
+      }
+    }
+
+    participants.push({
+      participantId: p.participantId,
+      displayName: p.displayName,
+      email: p.email,
+      joinTime: joinTime.toISOString(),
+      leaveTime: leaveTime ? leaveTime.toISOString() : null,
+      present,
+      sessions,
+    });
+  }
+  return participants;
 }
 
 function showSimControls() {
