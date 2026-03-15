@@ -1812,6 +1812,8 @@ function switchTab(tab) {
 
 function showTabs() {
   document.getElementById('tab-bar').classList.add('visible');
+  // Hide redundant list headers when tabs are showing
+  document.getElementById('list-header-participants').style.display = 'none';
 }
 
 // Fetch calendar attendees once when tracking starts (for live invited tab)
