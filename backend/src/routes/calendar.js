@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { google } = require('googleapis');
 const { makeJWT, makeUserClient } = require('../services/googleAuth');
+const CONFIG = require('../config');
 const log = require('../lib/logger');
 const { persistCalendarData } = require('../services/firestore');
 
@@ -79,7 +80,8 @@ router.get('/calendar-attendees', async (req, res) => {
     res.json({ isScheduled: true, eventTitle: matchedEvent.summary || 'Scheduled Meeting', attendees });
 
     // Fire-and-forget: store title + invited attendees for analytics
-    persistCalendarData(meetingCode, matchedEvent.summary || 'Scheduled Meeting', attendees);
+    const domain = req.user?.domain || CONFIG.allowedDomains?.[0] || 'default';
+    persistCalendarData(domain, meetingCode, matchedEvent.summary || 'Scheduled Meeting', attendees);
 
   } catch (err) {
     log.error('calendar lookup failed', { error: err.message });

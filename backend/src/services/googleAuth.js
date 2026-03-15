@@ -32,20 +32,21 @@ async function loadOAuthClientSecret() {
 
 // ── Service Account (Meet API, Directory API) ──
 
-async function makeJWT(scopes) {
+async function makeJWT(scopes, impersonateEmail) {
   const key = await loadServiceAccountKey();
+  const subject = impersonateEmail || CONFIG.impersonateEmail;
   const jwt = new google.auth.JWT({
     email:   key.client_email,
     key:     key.private_key,
     scopes,
-    subject: CONFIG.impersonateEmail,
+    subject,
   });
   await jwt.authorize();
   return jwt;
 }
 
-async function getMeetToken() {
-  const jwt = await makeJWT(['https://www.googleapis.com/auth/meetings.space.readonly']);
+async function getMeetToken(impersonateEmail) {
+  const jwt = await makeJWT(['https://www.googleapis.com/auth/meetings.space.readonly'], impersonateEmail);
   const tokens = await jwt.authorize();
   return tokens.access_token;
 }

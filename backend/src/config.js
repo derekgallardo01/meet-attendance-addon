@@ -16,8 +16,11 @@ const CONFIG = {
   sheetId:          process.env.SHEET_ID || null,
   adminEmail:       process.env.ADMIN_EMAIL || null,
 
-  // General
-  allowedOrigins:  (process.env.ALLOWED_ORIGINS || 'https://derekgallardo01.github.io,https://meet.google.com').split(','),
+  // General — meet.google.com always allowed (side panel iframe)
+  allowedOrigins:  [...new Set([
+    'https://meet.google.com',
+    ...(process.env.ALLOWED_ORIGINS || 'https://derekgallardo01.github.io').split(','),
+  ])],
   allowedDomains:  (process.env.ALLOWED_DOMAINS || 'theyachtgroup.com').split(','),
   port:             process.env.PORT || 8080,
   gcpProjectId:     process.env.GCP_PROJECT_ID || null,

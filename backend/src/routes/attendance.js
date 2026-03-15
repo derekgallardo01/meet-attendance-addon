@@ -4,7 +4,7 @@ const { getMeetToken, makeJWT, loadServiceAccountKey } = require('../services/go
 const { meetGet, meetGetAll } = require('../services/meetApi');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
-const { persistAttendance } = require('../services/firestore');
+const { persistAttendance, getTenantConfig } = require('../services/firestore');
 
 const router = Router();
 
@@ -17,12 +17,13 @@ function extractUserId(participantPath) {
 }
 
 // Look up emails from Google Workspace Directory for participants missing emails
-async function enrichEmails(participants) {
+async function enrichEmails(participants, adminEmail) {
   const needsLookup = participants.filter(p => !p.email && extractUserId(p.participantId));
   log.info('enrichEmails called', { total: participants.length, needsLookup: needsLookup.length });
   if (needsLookup.length === 0) return;
-  if (!CONFIG.adminEmail) {
-    log.info('ADMIN_EMAIL not set, skipping directory enrichment');
+  const resolvedAdmin = adminEmail || CONFIG.adminEmail;
+  if (!resolvedAdmin) {
+    log.info('no admin email configured, skipping directory enrichment');
     return;
   }
 
@@ -33,7 +34,7 @@ async function enrichEmails(participants) {
       email: key.client_email,
       key: key.private_key,
       scopes: ['https://www.googleapis.com/auth/admin.directory.user.readonly'],
-      subject: CONFIG.adminEmail,
+      subject: resolvedAdmin,
     });
     await dirAuth.authorize();
     const directory = google.admin({ version: 'directory_v1', auth: dirAuth });
@@ -75,7 +76,11 @@ router.get('/attendance', async (req, res) => {
   }
 
   try {
-    const token = await getMeetToken();
+    // Look up tenant-specific impersonation email, fall back to global config
+    const userDomainForTenant = req.user?.domain || CONFIG.allowedDomains[0];
+    const tenantConfig = await getTenantConfig(userDomainForTenant);
+    const impersonateEmail = tenantConfig?.impersonateEmail || CONFIG.impersonateEmail;
+    const token = await getMeetToken(impersonateEmail);
     let records = [];
 
     try {
@@ -126,12 +131,13 @@ router.get('/attendance', async (req, res) => {
     );
 
     // Enrich missing emails via Workspace Directory API
-    await enrichEmails(participants);
+    await enrichEmails(participants, tenantConfig?.adminEmail);
 
     res.json({ participants });
 
     // Fire-and-forget: persist to Firestore for analytics
-    persistAttendance(conferenceId, conferenceRecord.name, participants);
+    const domain = req.user?.domain || CONFIG.allowedDomains[0];
+    persistAttendance(domain, conferenceId, conferenceRecord.name, participants);
 
   } catch (err) {
     log.error('attendance fetch failed', { error: err.message });

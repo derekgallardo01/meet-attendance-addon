@@ -772,7 +772,13 @@
 /* ═══════════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════════ */
-const GOOGLE_CLIENT_ID = '415551639811-iva2cbvlgdn8mckarc51sd3p8k3lb467.apps.googleusercontent.com';
+// ── Configuration (single place for all environment-specific values) ──
+const APP_CONFIG = {
+  cloudProjectNumber: '415551639811',
+  googleClientId: '415551639811-iva2cbvlgdn8mckarc51sd3p8k3lb467.apps.googleusercontent.com',
+  backendUrl: '/api',
+};
+const GOOGLE_CLIENT_ID = APP_CONFIG.googleClientId;
 const OAUTH_SCOPES = 'openid email profile https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
 const state = {
@@ -784,7 +790,7 @@ const state = {
   refreshTimer:  null,
   durationTimer: null,
   sdk:           null,
-  backendUrl:    '/api',
+  backendUrl:    APP_CONFIG.backendUrl,
   // Auth
   sessionToken:  null,
   userEmail:     null,
@@ -979,7 +985,7 @@ async function initSDK() {
     }
 
     const session = await window.meet.addon.createAddonSession({
-      cloudProjectNumber: '415551639811',
+      cloudProjectNumber: APP_CONFIG.cloudProjectNumber,
     });
 
     state.sdk = session;

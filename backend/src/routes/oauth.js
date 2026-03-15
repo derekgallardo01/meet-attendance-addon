@@ -4,7 +4,7 @@ const { google } = require('googleapis');
 const CONFIG = require('../config');
 const log = require('../lib/logger');
 const { exchangeCode, revokeToken } = require('../services/googleAuth');
-const { upsertUser, getUser } = require('../services/firestore');
+const { upsertUser, getUser, updateUserTokens } = require('../services/firestore');
 
 const router = Router();
 
@@ -26,18 +26,16 @@ router.post('/oauth/exchange', async (req, res) => {
     const domain = payload.hd || email.split('@')[1];
     const displayName = payload.name || email;
 
-    // Store user + tokens in Firestore
-    await upsertUser({
+    // Store user + tokens in tenant-scoped Firestore
+    await upsertUser(domain, {
       email,
-      domain,
       displayName,
       refreshToken: tokens.refresh_token || undefined,
     });
 
     // Always store the fresh access token from the exchange
     if (tokens.access_token) {
-      const { updateUserTokens } = require('../services/firestore');
-      await updateUserTokens(email, {
+      await updateUserTokens(domain, email, {
         accessToken: tokens.access_token,
         tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600 * 1000),
       });
@@ -67,7 +65,8 @@ router.post('/oauth/revoke', async (req, res) => {
     }
 
     const decoded = jwt.verify(authHeader.slice(7), CONFIG.sessionSecret);
-    const user = await getUser(decoded.email);
+    const domain = decoded.domain || decoded.email.split('@')[1];
+    const user = await getUser(domain, decoded.email);
 
     if (user?.refreshToken) {
       await revokeToken(user.refreshToken);

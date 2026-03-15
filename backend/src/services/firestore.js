@@ -32,7 +32,7 @@ function decryptToken(ciphertext) {
     return decrypted;
   } catch (err) {
     log.warn('token decryption failed — may be legacy plaintext', { error: err.message });
-    return ciphertext; // return as-is if decryption fails (legacy unencrypted token)
+    return ciphertext;
   }
 }
 
@@ -47,22 +47,49 @@ function getDb() {
   return db;
 }
 
+// ── Tenant helper: all collections scoped under tenants/{domain} ──
+function tenantRef(domain) {
+  return getDb().collection('tenants').doc(domain);
+}
+
 // Extract last segment from Meet API resource name
-// e.g. "conferenceRecords/abc/participants/xyz" → "xyz"
 function lastSegment(resourceName) {
   const parts = resourceName.split('/');
   return parts[parts.length - 1];
 }
 
-/**
- * Persist meeting + participants after attendance fetch.
- * Fire-and-forget — never throws.
- */
-async function persistAttendance(conferenceId, recordName, participants) {
+// ── Tenant config ──
+
+async function getTenantConfig(domain) {
   try {
-    const firestore = getDb();
+    const doc = await tenantRef(domain).get();
+    return doc.exists ? doc.data() : null;
+  } catch (err) {
+    log.error('firestore: getTenantConfig failed', { domain, error: err.message });
+    return null;
+  }
+}
+
+async function upsertTenantConfig(domain, config) {
+  try {
+    await tenantRef(domain).set({
+      domain,
+      ...config,
+      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    log.info('firestore: upserted tenant config', { domain });
+  } catch (err) {
+    log.error('firestore: upsertTenantConfig failed', { domain, error: err.message });
+  }
+}
+
+// ── Meeting persistence (tenant-scoped) ──
+
+async function persistAttendance(domain, conferenceId, recordName, participants) {
+  try {
     const now = FieldValue.serverTimestamp();
-    const meetingRef = firestore.collection('meetings').doc(conferenceId);
+    const meetingRef = tenantRef(domain).collection('meetings').doc(conferenceId);
 
     const joinTimes = participants.map(p => p.joinTime).filter(Boolean).map(t => new Date(t));
     const leaveTimes = participants.map(p => p.leaveTime).filter(Boolean).map(t => new Date(t));
@@ -78,7 +105,7 @@ async function persistAttendance(conferenceId, recordName, participants) {
       createdAt: now,
     }, { merge: true });
 
-    const batch = firestore.batch();
+    const batch = getDb().batch();
     for (const p of participants) {
       const docId = lastSegment(p.participantId);
       const pRef = meetingRef.collection('participants').doc(docId);
@@ -97,21 +124,16 @@ async function persistAttendance(conferenceId, recordName, participants) {
     }
     await batch.commit();
 
-    log.info('firestore: persisted attendance', { conferenceId, participants: participants.length });
+    log.info('firestore: persisted attendance', { domain, conferenceId, participants: participants.length });
   } catch (err) {
-    log.error('firestore: persistAttendance failed', { conferenceId, error: err.message });
+    log.error('firestore: persistAttendance failed', { domain, conferenceId, error: err.message });
   }
 }
 
-/**
- * Update meeting title + calendar attendees from calendar data.
- * Fire-and-forget — never throws.
- */
-async function persistCalendarData(meetingCode, eventTitle, attendees) {
+async function persistCalendarData(domain, meetingCode, eventTitle, attendees) {
   try {
-    const firestore = getDb();
     const now = FieldValue.serverTimestamp();
-    const meetingRef = firestore.collection('meetings').doc(meetingCode);
+    const meetingRef = tenantRef(domain).collection('meetings').doc(meetingCode);
 
     await meetingRef.set({
       conferenceId: meetingCode,
@@ -121,22 +143,17 @@ async function persistCalendarData(meetingCode, eventTitle, attendees) {
       createdAt: now,
     }, { merge: true });
 
-    log.info('firestore: persisted calendar data', { meetingCode, eventTitle });
+    log.info('firestore: persisted calendar data', { domain, meetingCode, eventTitle });
   } catch (err) {
-    log.error('firestore: persistCalendarData failed', { meetingCode, error: err.message });
+    log.error('firestore: persistCalendarData failed', { domain, meetingCode, error: err.message });
   }
 }
 
-/**
- * Record a sheets export for audit trail.
- * Fire-and-forget — never throws.
- */
-async function persistExport({ meetingTitle, tabName, exportedAt, participantCount, sheetUrl }) {
+async function persistExport(domain, { meetingTitle, tabName, exportedAt, participantCount, sheetUrl }) {
   try {
-    const firestore = getDb();
     const now = FieldValue.serverTimestamp();
 
-    await firestore.collection('exports').add({
+    await tenantRef(domain).collection('exports').add({
       meetingTitle,
       tabName,
       exportedAt,
@@ -145,31 +162,41 @@ async function persistExport({ meetingTitle, tabName, exportedAt, participantCou
       createdAt: now,
     });
 
-    log.info('firestore: persisted export record', { tabName, participantCount });
+    log.info('firestore: persisted export record', { domain, tabName, participantCount });
   } catch (err) {
-    log.error('firestore: persistExport failed', { tabName, error: err.message });
+    log.error('firestore: persistExport failed', { domain, tabName, error: err.message });
   }
 }
 
-// ── User management (OAuth Phase 3) ──
+// ── User management (tenant-scoped) ──
 
-async function getUser(email) {
+async function getUser(domain, email) {
   try {
-    const doc = await getDb().collection('users').doc(email.toLowerCase()).get();
-    if (!doc.exists) return null;
+    const doc = await tenantRef(domain).collection('users').doc(email.toLowerCase()).get();
+    if (!doc.exists) {
+      // Fallback: check legacy root-level users collection (migration support)
+      const legacyDoc = await getDb().collection('users').doc(email.toLowerCase()).get();
+      if (legacyDoc.exists) {
+        log.info('firestore: found legacy user, migrating', { email, domain });
+        const data = legacyDoc.data();
+        // Migrate to tenant-scoped
+        await tenantRef(domain).collection('users').doc(email.toLowerCase()).set(data);
+        if (data.refreshToken) data.refreshToken = decryptToken(data.refreshToken);
+        return data;
+      }
+      return null;
+    }
     const data = doc.data();
-    // Decrypt refresh token on read
     if (data.refreshToken) data.refreshToken = decryptToken(data.refreshToken);
     return data;
   } catch (err) {
-    log.error('firestore: getUser failed', { email, error: err.message });
+    log.error('firestore: getUser failed', { domain, email, error: err.message });
     return null;
   }
 }
 
-async function upsertUser({ email, domain, displayName, refreshToken, sheetId }) {
+async function upsertUser(domain, { email, displayName, refreshToken, sheetId }) {
   try {
-    const firestore = getDb();
     const now = FieldValue.serverTimestamp();
     const data = {
       email: email.toLowerCase(),
@@ -182,42 +209,55 @@ async function upsertUser({ email, domain, displayName, refreshToken, sheetId })
     if (refreshToken !== undefined) data.refreshToken = encryptToken(refreshToken);
     if (sheetId !== undefined) data.sheetId = sheetId;
 
-    await firestore.collection('users').doc(email.toLowerCase()).set(data, { merge: true });
-    log.info('firestore: upserted user', { email });
+    await tenantRef(domain).collection('users').doc(email.toLowerCase()).set(data, { merge: true });
+    log.info('firestore: upserted user', { domain, email });
   } catch (err) {
-    log.error('firestore: upsertUser failed', { email, error: err.message });
+    log.error('firestore: upsertUser failed', { domain, email, error: err.message });
   }
 }
 
-async function getUserSheetId(email) {
-  const user = await getUser(email);
+async function getUserSheetId(domain, email) {
+  const user = await getUser(domain, email);
   return user?.sheetId || null;
 }
 
-async function setUserSheetId(email, sheetId) {
+async function setUserSheetId(domain, email, sheetId) {
   try {
-    await getDb().collection('users').doc(email.toLowerCase()).set(
+    await tenantRef(domain).collection('users').doc(email.toLowerCase()).set(
       { sheetId, updatedAt: FieldValue.serverTimestamp() },
       { merge: true }
     );
-    log.info('firestore: set user sheetId', { email, sheetId });
+    log.info('firestore: set user sheetId', { domain, email, sheetId });
   } catch (err) {
-    log.error('firestore: setUserSheetId failed', { email, error: err.message });
+    log.error('firestore: setUserSheetId failed', { domain, email, error: err.message });
   }
 }
 
-async function updateUserTokens(email, { accessToken, tokenExpiresAt }) {
+async function updateUserTokens(domain, email, { accessToken, tokenExpiresAt }) {
   try {
-    await getDb().collection('users').doc(email.toLowerCase()).set(
+    await tenantRef(domain).collection('users').doc(email.toLowerCase()).set(
       { accessToken, tokenExpiresAt, updatedAt: FieldValue.serverTimestamp() },
       { merge: true }
     );
   } catch (err) {
-    log.error('firestore: updateUserTokens failed', { email, error: err.message });
+    log.error('firestore: updateUserTokens failed', { domain, email, error: err.message });
+  }
+}
+
+// ── Delete user data (Marketplace compliance) ──
+
+async function deleteUser(domain, email) {
+  try {
+    await tenantRef(domain).collection('users').doc(email.toLowerCase()).delete();
+    log.info('firestore: deleted user', { domain, email });
+  } catch (err) {
+    log.error('firestore: deleteUser failed', { domain, email, error: err.message });
   }
 }
 
 module.exports = {
+  getTenantConfig, upsertTenantConfig,
   persistAttendance, persistCalendarData, persistExport,
   getUser, upsertUser, getUserSheetId, setUserSheetId, updateUserTokens,
+  deleteUser,
 };

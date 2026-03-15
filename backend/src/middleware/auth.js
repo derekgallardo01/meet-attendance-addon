@@ -16,7 +16,8 @@ async function auth(req, res, next) {
 
   try {
     const decoded = jwt.verify(authHeader.slice(7), CONFIG.sessionSecret);
-    const user = await getUser(decoded.email);
+    const domain = decoded.domain || decoded.email.split('@')[1];
+    const user = await getUser(domain, decoded.email);
 
     let accessToken = null;
     if (user?.refreshToken) {
@@ -30,7 +31,7 @@ async function auth(req, res, next) {
           const credentials = await refreshAccessToken(user.refreshToken);
           accessToken = credentials.access_token;
           const tokenExpiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
-          await updateUserTokens(decoded.email, { accessToken, tokenExpiresAt });
+          await updateUserTokens(domain, decoded.email, { accessToken, tokenExpiresAt });
         } catch (refreshErr) {
           log.warn('token refresh failed, continuing without accessToken', { error: refreshErr.message });
           accessToken = null;
