@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Attendance Tracker</title>
+  <style>
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #4ade80; --error: #f85149; --blue: #58a6ff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 40px 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header h1 { font-size: 1.5rem; }
+    .header .user { color: var(--muted); font-size: .85rem; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: .85rem; font-weight: 600; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn:hover { opacity: .9; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .stat-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .stat-value { font-size: 2rem; font-weight: 700; }
+    .stat-value.green { color: var(--accent); }
+    .stat-value.blue { color: var(--blue); }
+    .stat-value.red { color: var(--error); }
+
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .section h2 { font-size: 1rem; margin-bottom: 16px; color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: .75rem; text-transform: uppercase; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .badge { padding: 2px 8px; border-radius: 10px; font-size: .7rem; font-weight: 600; }
+    .badge-active { background: rgba(74,222,128,.15); color: var(--accent); }
+    .badge-inactive { background: rgba(248,81,73,.15); color: var(--error); }
+
+    .login-screen { text-align: center; padding: 80px 20px; }
+    .login-screen h2 { margin-bottom: 16px; }
+    .login-screen p { color: var(--muted); margin-bottom: 24px; }
+
+    #dashboard { display: none; }
+    #loading { text-align: center; padding: 60px; color: var(--muted); }
+    .error { color: var(--error); text-align: center; padding: 20px; }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Login -->
+    <div id="login-screen" class="login-screen">
+      <h2>Attendance Tracker Admin</h2>
+      <p>Sign in with your Google account to view analytics</p>
+      <button class="btn btn-primary" id="btn-signin" onclick="signIn()">Sign in with Google</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" style="display:none">Loading dashboard...</div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+      <div class="header">
+        <h1>Admin Dashboard</h1>
+        <div>
+          <span class="user" id="user-email"></span>
+          <button class="btn btn-secondary" onclick="signOut()" style="margin-left:8px">Sign out</button>
+          <button class="btn btn-secondary" onclick="loadDashboard()" style="margin-left:4px">Refresh</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Organizations</div>
+          <div class="stat-value green" id="stat-tenants">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Your Org Users</div>
+          <div class="stat-value blue" id="stat-users">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Meetings Tracked</div>
+          <div class="stat-value blue" id="stat-meetings">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Exports</div>
+          <div class="stat-value" id="stat-exports">—</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Organizations</h2>
+        <table>
+          <thead>
+            <tr><th>Domain</th><th>Status</th><th>Installed</th></tr>
+          </thead>
+          <tbody id="tenant-rows">
+            <tr><td colspan="3" style="color:var(--muted)">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Your Organization</h2>
+        <table>
+          <thead>
+            <tr><th>Metric</th><th>Value</th></tr>
+          </thead>
+          <tbody id="org-rows">
+            <tr><td colspan="2" style="color:var(--muted)">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Recent Users</h2>
+        <table>
+          <thead>
+            <tr><th>User</th><th>Email</th><th>Last Active</th></tr>
+          </thead>
+          <tbody id="user-rows">
+            <tr><td colspan="3" style="color:var(--muted)">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'https://meet-attendance-backend-415551639811.us-central1.run.app/api';
+    const CLIENT_ID = '415551639811-iva2cbvlgdn8mckarc51sd3p8k3lb467.apps.googleusercontent.com';
+    const SCOPES = 'openid email profile';
+    let sessionToken = null;
+
+    function signIn() {
+      const client = google.accounts.oauth2.initCodeClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        ux_mode: 'popup',
+        access_type: 'offline',
+        callback: async (response) => {
+          if (response.error) return;
+          try {
+            const res = await fetch(`${BACKEND_URL}/oauth/exchange`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: response.code }),
+            });
+            if (!res.ok) throw new Error('Auth failed');
+            const data = await res.json();
+            sessionToken = data.sessionToken;
+            document.getElementById('user-email').textContent = data.email;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = '';
+            loadDashboard();
+          } catch (err) {
+            alert('Sign-in failed: ' + err.message);
+          }
+        },
+      });
+      client.requestCode();
+    }
+
+    function signOut() {
+      sessionToken = null;
+      document.getElementById('login-screen').style.display = '';
+      document.getElementById('dashboard').style.display = 'none';
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/admin/stats`, {
+          headers: { 'Authorization': `Bearer ${sessionToken}` },
+        });
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+
+        document.getElementById('stat-tenants').textContent = data.totalTenants || 0;
+        document.getElementById('stat-users').textContent = data.yourDomain?.users || 0;
+        document.getElementById('stat-meetings').textContent = data.yourDomain?.meetings || 0;
+        document.getElementById('stat-exports').textContent = data.yourDomain?.exports || 0;
+
+        // Tenant rows
+        const tenantBody = document.getElementById('tenant-rows');
+        if (data.tenants?.length > 0) {
+          tenantBody.innerHTML = data.tenants.map(t => `
+            <tr>
+              <td>${t.domain}</td>
+              <td><span class="badge ${t.active !== false ? 'badge-active' : 'badge-inactive'}">${t.active !== false ? 'Active' : 'Inactive'}</span></td>
+              <td style="color:var(--muted)">${t.installedAt ? new Date(t.installedAt).toLocaleDateString() : '—'}</td>
+            </tr>
+          `).join('');
+        } else {
+          tenantBody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">No organizations yet</td></tr>';
+        }
+
+        // Recent users
+        const userBody = document.getElementById('user-rows');
+        const users = data.yourDomain?.recentUsers || [];
+        if (users.length > 0) {
+          userBody.innerHTML = users.map(u => `
+            <tr>
+              <td>${u.displayName || '—'}</td>
+              <td style="color:var(--muted)">${u.email}</td>
+              <td style="color:var(--muted)">${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>
+            </tr>
+          `).join('');
+        }
+
+        // Org detail rows
+        const orgBody = document.getElementById('org-rows');
+        const d = data.yourDomain || {};
+        orgBody.innerHTML = `
+          <tr><td>Domain</td><td>${d.domain || '—'}</td></tr>
+          <tr><td>Users</td><td>${d.users || 0}</td></tr>
+          <tr><td>Meetings Tracked</td><td>${d.meetings || 0}</td></tr>
+          <tr><td>Exports</td><td>${d.exports || 0}</td></tr>
+        `;
+      } catch (err) {
+        console.error('Dashboard load failed:', err);
+      }
+    }
+  </script>
+</body>
+</html>
