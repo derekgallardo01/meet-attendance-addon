@@ -268,7 +268,7 @@ router.post('/save-to-sheets', async (req, res) => {
     res.json({ success: true, sheetUrl });
 
     // Fire-and-forget: audit trail for exports
-    const domain = req.user?.domain || CONFIG.allowedDomains?.[0] || 'default';
+    const domain = req.user?.domain || 'default';
     persistExport(domain, {
       meetingTitle: meetingTitle || 'Unknown',
       tabName,

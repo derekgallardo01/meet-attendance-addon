@@ -78,7 +78,7 @@ router.get('/attendance', async (req, res) => {
   try {
     // Use user's OAuth token for Meet API if authenticated, service account fallback
     let token;
-    const userDomainForTenant = req.user?.domain || CONFIG.allowedDomains[0];
+    const userDomainForTenant = req.user?.domain || 'default';
     const tenantConfig = await getTenantConfig(userDomainForTenant);
 
     if (req.user?.accessToken) {
@@ -146,7 +146,7 @@ router.get('/attendance', async (req, res) => {
     res.json({ participants });
 
     // Fire-and-forget: persist to Firestore for analytics
-    const domain = req.user?.domain || CONFIG.allowedDomains[0];
+    const domain = req.user?.domain || 'default';
     persistAttendance(domain, conferenceId, conferenceRecord.name, participants);
 
   } catch (err) {
