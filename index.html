@@ -2073,7 +2073,7 @@ function activateInjection() {
   inject.elapsed = 0;
   inject.pool = generateSimSchedule(inject.count);
   inject.startTime = Date.now();
-  toast(`Demo mode: injecting ${inject.count} simulated participants (${inject.speed}x speed)`);
+  console.log(`[Attendance] Demo injection activated: ${inject.count} participants at ${inject.speed}x speed`);
 
   // Tick every second at inject.speed multiplier
   clearInterval(inject.timer);
@@ -2093,7 +2093,7 @@ function deactivateInjection() {
   }
   renderList();
   updateSummary();
-  toast('Demo mode deactivated');
+  console.log('[Attendance] Demo injection deactivated');
 }
 
 function getInjectedParticipants() {
