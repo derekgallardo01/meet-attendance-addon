@@ -953,10 +953,37 @@ async function initSDK() {
 /* ═══════════════════════════════════════════════════════════════
    TRACKING CONTROL
 ═══════════════════════════════════════════════════════════════ */
+// Adaptive polling: 10s when active (first 10 min or changes detected), 30s when steady
+const POLL_FAST = 10_000;  // 10 seconds
+const POLL_SLOW = 30_000;  // 30 seconds
+const FAST_PHASE_DURATION = 10 * 60_000; // first 10 minutes always fast
+
+function getPollInterval() {
+  if (!state.startTime) return POLL_FAST;
+  const elapsed = Date.now() - state.startTime.getTime();
+  // Always fast during first 10 minutes
+  if (elapsed < FAST_PHASE_DURATION) return POLL_FAST;
+  // Fast if recent changes detected (within last 2 minutes)
+  if (state._lastChangeTime && (Date.now() - state._lastChangeTime) < 120_000) return POLL_FAST;
+  // Otherwise slow
+  return POLL_SLOW;
+}
+
+function schedulePoll() {
+  clearTimeout(state.refreshTimer);
+  const interval = getPollInterval();
+  state.syncCountdown = Math.round(interval / 1000);
+  state.refreshTimer = setTimeout(() => {
+    refreshAttendance();
+    schedulePoll(); // schedule next poll after this one completes
+  }, interval);
+}
+
 function startTracking() {
   state.tracking  = true;
   state.startTime = new Date();
   state.participants.clear();
+  state._lastChangeTime = Date.now(); // treat start as a change
 
   document.getElementById('btn-start').disabled  = true;
   document.getElementById('btn-refresh').disabled = false;
@@ -967,15 +994,10 @@ function startTracking() {
   startDurationTimer();
   refreshAttendance();
 
-  // Auto-sync every 30s with countdown display
-  state.syncCountdown = 30;
-  clearInterval(state.refreshTimer);
+  // Adaptive polling with countdown display
+  clearTimeout(state.refreshTimer);
   clearInterval(state.countdownTimer);
-
-  state.refreshTimer = setInterval(() => {
-    state.syncCountdown = 30;
-    refreshAttendance();
-  }, 30_000);
+  schedulePoll();
 
   state.countdownTimer = setInterval(() => {
     state.syncCountdown = Math.max(0, state.syncCountdown - 1);
@@ -985,7 +1007,7 @@ function startTracking() {
 
 function stopTracking() {
   state.tracking = false;
-  clearInterval(state.refreshTimer);
+  clearTimeout(state.refreshTimer);
   clearInterval(state.countdownTimer);
   clearInterval(state.durationTimer);
   setStatus('idle', 'Tracking stopped');
@@ -1036,10 +1058,12 @@ async function refreshAttendance() {
    MERGE INCOMING PARTICIPANTS INTO STATE MAP
 ═══════════════════════════════════════════════════════════════ */
 function mergeParticipants(incoming = []) {
+  let changed = false;
+
   // Only mark participants as gone if they're NOT in the incoming list at all
   const incomingKeys = new Set(incoming.map(p => p.participantId || p.displayName));
   for (const [key, p] of state.participants) {
-    if (p.present && !incomingKeys.has(key)) p.present = false;
+    if (p.present && !incomingKeys.has(key)) { p.present = false; changed = true; }
   }
 
   for (const p of incoming) {
@@ -1047,6 +1071,7 @@ function mergeParticipants(incoming = []) {
     const key = p.participantId || p.displayName;
     const apiPresent = p.present ?? true;
     if (!state.participants.has(key)) {
+      changed = true;
       state.participants.set(key, {
         participantId:  p.participantId || null,
         displayName:    p.displayName,
@@ -1063,21 +1088,22 @@ function mergeParticipants(incoming = []) {
       const newSessions = p.sessions || existing.sessions;
       // If session count went up, they rejoined — mark present immediately
       if (newSessions > existing.sessions) {
-        if (!existing.present) showActivityNote(p.displayName, 'rejoined');
+        if (!existing.present) { showActivityNote(p.displayName, 'rejoined'); changed = true; }
         existing.present = true;
         existing._leftStreak = 0;
       } else if (apiPresent) {
-        if (!existing.present) showActivityNote(p.displayName, 'rejoined');
+        if (!existing.present) { showActivityNote(p.displayName, 'rejoined'); changed = true; }
         existing.present = true;
         existing._leftStreak = 0;
       } else if (existing.present) {
         // Meet API lags on rejoins — require 3 consecutive "not present" polls
-        // (~ 90 seconds) before marking as Left to avoid false negatives
+        // (~30s at 10s intervals) before marking as Left to avoid false negatives
         existing._leftStreak = (existing._leftStreak || 0) + 1;
         // Show notification early (1st poll), but delay status change (3rd poll)
         if (existing._leftStreak === 1) showActivityNote(p.displayName, 'left');
         if (existing._leftStreak >= 3) {
           existing.present = false;
+          changed = true;
         }
       }
       existing.leaveTime = p.leaveTime ? new Date(p.leaveTime) : null;
@@ -1085,6 +1111,9 @@ function mergeParticipants(incoming = []) {
       existing.sessions  = newSessions;
     }
   }
+
+  // Track when changes happen for adaptive polling
+  if (changed) state._lastChangeTime = Date.now();
 
   // Update meeting start time to earliest API join time (more accurate than local timer)
   const allJoinTimes = [...state.participants.values()]
