@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support — Attendance Tracker</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+    h1 { color: #1a73e8; }
+    h2 { margin-top: 2em; color: #202124; }
+    a { color: #1a73e8; }
+    .card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .card h3 { margin-top: 0; }
+    .footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid #e0e0e0; color: #666; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>Support</h1>
+  <p>Need help with Attendance Tracker? We're here to help.</p>
+
+  <div class="card">
+    <h3>Email Support</h3>
+    <p>For questions, bug reports, or feature requests, email us at:</p>
+    <p><strong><a href="mailto:derekgallardo01@gmail.com">derekgallardo01@gmail.com</a></strong></p>
+    <p>We typically respond within 24 hours.</p>
+  </div>
+
+  <div class="card">
+    <h3>GitHub Issues</h3>
+    <p>Found a bug or want to request a feature? Open an issue on our GitHub repository:</p>
+    <p><strong><a href="https://github.com/derekgallardo01/meet-attendance-addon/issues" target="_blank">github.com/derekgallardo01/meet-attendance-addon/issues</a></strong></p>
+  </div>
+
+  <h2>Frequently Asked Questions</h2>
+
+  <h3>How do I install the add-on?</h3>
+  <p>Open Google Meet, click the puzzle piece icon (Activities), go to Add-ons, and search for "Attendance Tracker". Click Install to add it to your Meet.</p>
+
+  <h3>Why don't I see all participants?</h3>
+  <p>If you see a message "Some participants may not appear", your Workspace admin needs to configure domain-wide delegation for the service account. Click "Ask your admin to complete setup" in the add-on for instructions.</p>
+
+  <h3>Why does a participant show as "Left" when they're still in the meeting?</h3>
+  <p>The Google Meet API has a 2-5 minute delay in registering new sessions. If someone leaves and rejoins, it may take a few minutes for their status to update. The add-on uses multiple strategies to minimize this delay.</p>
+
+  <h3>Can I use this with a personal Gmail account?</h3>
+  <p>The Google Meet REST API requires a Google Workspace account. Personal Gmail accounts (@gmail.com) are not supported by Google's API.</p>
+
+  <h3>Where are my exported sheets?</h3>
+  <p>Exports are saved in a "Meet Attendance Tracker" folder in your Google Drive. After exporting, click "Open exported sheet" in the add-on to go directly to it.</p>
+
+  <h3>How do I request data deletion?</h3>
+  <p>Email <a href="mailto:derekgallardo01@gmail.com">derekgallardo01@gmail.com</a> with the subject "Data Deletion Request" and we will remove all your data within 30 days.</p>
+
+  <div class="footer">
+    <p>Attendance Tracker is a Google Meet&#8482; add-on.</p>
+    <p>Google Meet&#8482; is a trademark of Google LLC.</p>
+    <p><a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Service</a></p>
+  </div>
+</body>
+</html>
