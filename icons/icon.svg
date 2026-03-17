@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Transparent background (no fill) -->
+  <!-- Green rounded rectangle -->
+  <rect x="8" y="8" width="112" height="112" rx="24" ry="24" fill="#34A853"/>
+  <!-- Video camera icon (white) -->
+  <!-- Camera body -->
+  <rect x="20" y="44" width="62" height="42" rx="8" ry="8" fill="white"/>
+  <!-- Camera lens triangle -->
+  <polygon points="84,52 108,38 108,92 84,78" fill="white"/>
+  <!-- Lens circle on body -->
+  <circle cx="51" cy="65" r="13" fill="#34A853"/>
+  <circle cx="51" cy="65" r="7" fill="white"/>
+</svg>

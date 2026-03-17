@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" width="220" height="140">
+  <!-- Green background -->
+  <rect width="220" height="140" fill="#34A853"/>
+  <!-- Small camera icon on the left -->
+  <rect x="18" y="38" width="36" height="26" rx="5" ry="5" fill="white" opacity="0.95"/>
+  <polygon points="55,43 68,36 68,68 55,61" fill="white" opacity="0.95"/>
+  <circle cx="36" cy="51" r="8" fill="#34A853"/>
+  <circle cx="36" cy="51" r="4" fill="white"/>
+  <!-- App name -->
+  <text x="82" y="48" font-family="Google Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="white">Attendance</text>
+  <text x="82" y="67" font-family="Google Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="white">Tracker</text>
+  <!-- Tagline -->
+  <text x="18" y="106" font-family="Google Sans, Arial, sans-serif" font-size="10" fill="white" opacity="0.85">Track who joins your Google Meet</text>
+  <!-- Subtle bottom accent line -->
+  <rect x="0" y="128" width="220" height="12" fill="black" opacity="0.08"/>
+</svg>
