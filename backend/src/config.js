@@ -19,9 +19,9 @@ const CONFIG = {
   // General — meet.google.com always allowed (side panel iframe)
   allowedOrigins:  [...new Set([
     'https://meet.google.com',
-    ...(process.env.ALLOWED_ORIGINS || 'https://derekgallardo01.github.io').split(','),
+    ...(process.env.ALLOWED_ORIGINS || 'https://attendancetracker.dev,https://derekgallardo01.github.io').split(','),
   ])],
-  allowedDomains:  (process.env.ALLOWED_DOMAINS || 'theyachtgroup.com').split(','),
+  allowedDomains:  (process.env.ALLOWED_DOMAINS || '*').split(','),
   port:             process.env.PORT || 8080,
   gcpProjectId:     process.env.GCP_PROJECT_ID || null,
 };
