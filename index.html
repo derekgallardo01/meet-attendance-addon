@@ -10,7 +10,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Attendance Tracker</title>
+  <title>Attendance Tracker — Real-time attendance tracking for Google Meet</title>
+  <meta name="description" content="Track who joins, leaves, and how long they stay in your Google Meet calls. Export attendance reports to Google Sheets with one click." />
 
   <!-- Sentry Error Tracking -->
   <script src="https://browser.sentry-cdn.com/9.28.1/bundle.min.js" crossorigin="anonymous"></script>
@@ -746,6 +747,49 @@
 </head>
 <body>
 
+  <!-- ── Landing page (shown when NOT inside Google Meet) ── -->
+  <div id="landing-page" style="display:none">
+    <div style="min-height:100vh;background:#0d1117;color:#e6edf3;font-family:'Sora',sans-serif;display:flex;flex-direction:column;align-items:center;padding:40px 20px">
+      <div style="max-width:640px;width:100%;text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px">
+          <img src="icons/icon-96.png" alt="Attendance Tracker" width="48" height="48" style="border-radius:12px" />
+          <h1 style="font-size:1.5rem;font-weight:700;margin:0;color:#4ade80">Attendance Tracker</h1>
+        </div>
+        <p style="font-size:1.1rem;color:#9ca3af;line-height:1.6;margin-bottom:40px">
+          A Google Meet add-on that tracks who joins, who leaves, and how long each participant stays in your meetings. Export attendance reports to Google Sheets with one click.
+        </p>
+
+        <div style="text-align:left;display:flex;flex-direction:column;gap:24px;margin-bottom:40px">
+          <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">
+            <h3 style="margin:0 0 8px;color:#58a6ff;font-size:.95rem">Real-time Tracking</h3>
+            <p style="margin:0;color:#8b949e;font-size:.85rem;line-height:1.5">Automatically detects participants as they join and leave your Google Meet calls. See who is present, who has left, and session durations in real time.</p>
+          </div>
+          <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">
+            <h3 style="margin:0 0 8px;color:#58a6ff;font-size:.95rem">One-click Export to Google Sheets</h3>
+            <p style="margin:0;color:#8b949e;font-size:.85rem;line-height:1.5">Export your attendance data to a Google Sheet instantly. Each report includes participant names, emails, join/leave times, and total duration.</p>
+          </div>
+          <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">
+            <h3 style="margin:0 0 8px;color:#58a6ff;font-size:.95rem">Built for Meeting Organizers</h3>
+            <p style="margin:0;color:#8b949e;font-size:.85rem;line-height:1.5">Designed for teachers, trainers, and team leads who need reliable attendance records. Works with Google Workspace accounts and runs directly inside Google Meet.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom:40px">
+          <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" target="_blank" style="display:inline-block;background:#34A853;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;font-size:.95rem">Install from Google Workspace Marketplace</a>
+        </div>
+
+        <div style="display:flex;justify-content:center;gap:24px;font-size:.8rem">
+          <a href="privacy.html" style="color:#6e7681;text-decoration:none">Privacy Policy</a>
+          <a href="terms.html" style="color:#6e7681;text-decoration:none">Terms of Service</a>
+          <a href="support.html" style="color:#6e7681;text-decoration:none">Support</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Add-on UI (shown when inside Google Meet) ── -->
+  <div id="addon-ui">
+
   <!-- ── Header ── -->
   <header>
     <div class="logo">
@@ -1118,15 +1162,16 @@ async function initSDK() {
     console.log('[Attendance] waitForMeet result:', ready, 'window.meet =', typeof window.meet);
 
     if (!ready) {
-      // Not inside Meet — show simulation controls only if ?demo=1
+      // Not inside Meet — show landing page or demo mode
       const params = new URLSearchParams(window.location.search);
       if (params.get('demo') === '1') {
         document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
         setStatus('loading', 'Demo mode — configure simulation below');
         showSimControls();
       } else {
-        document.getElementById('meeting-title').textContent = 'Attendance Tracker';
-        setStatus('loading', 'Open this add-on inside a Google Meet call to start tracking.');
+        // Show landing page, hide add-on UI
+        document.getElementById('addon-ui').style.display = 'none';
+        document.getElementById('landing-page').style.display = 'block';
       }
       return;
     }
@@ -2479,5 +2524,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
   </div>
+
+  </div><!-- /addon-ui -->
 </body>
 </html>
