@@ -1268,9 +1268,16 @@ async function initSDK() {
 
   } catch (err) {
     console.error('[Attendance] SDK error:', err.message);
-    document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
-    setStatus('loading', 'Demo mode — configure simulation below');
-    showSimControls();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('demo') === '1') {
+      document.getElementById('meeting-title').textContent = 'Dev Preview Mode';
+      setStatus('loading', 'Demo mode — configure simulation below');
+      showSimControls();
+    } else {
+      // Show landing page, hide add-on UI
+      document.getElementById('addon-ui').style.display = 'none';
+      document.getElementById('landing-page').style.display = 'block';
+    }
   }
 }
 
