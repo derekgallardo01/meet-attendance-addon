@@ -83,7 +83,11 @@ router.get('/attendance', async (req, res) => {
 
     let token;
     let usingServiceAccount = false;
-    if (impersonateEmail) {
+    // Only use service account if the impersonation email's domain matches the user's domain.
+    // A service account impersonating user@domainA cannot see meetings from domainB.
+    const impersonateDomain = impersonateEmail ? impersonateEmail.split('@')[1] : null;
+    const shouldTryServiceAccount = impersonateEmail && (!userDomain || userDomain === impersonateDomain);
+    if (shouldTryServiceAccount) {
       try {
         token = await getMeetToken(impersonateEmail);
         usingServiceAccount = true;
@@ -91,10 +95,12 @@ router.get('/attendance', async (req, res) => {
       } catch (saErr) {
         log.warn('service account failed, falling back to user OAuth', { error: saErr.message });
       }
+    } else if (impersonateEmail && userDomain) {
+      log.info('skipping service account — domain mismatch', { userDomain, impersonateDomain });
     }
     if (!token && req.user?.accessToken) {
       token = req.user.accessToken;
-      log.info('using user OAuth for Meet API (limited — same-org only)', { email: req.user.email });
+      log.info('using user OAuth for Meet API', { email: req.user.email });
     }
     if (!token) {
       return res.status(401).json({ error: 'No authentication available for Meet API. Admin setup may be required.' });
