@@ -112,6 +112,24 @@ describe('setLocale + fallback chain', () => {
     strings.setLocale('ro');
     expect(strings.t('btn.start')).toBe('Start');
     expect(strings.t('attendee.present')).toBe('Prezent (Present)');
+
+    // Hebrew
+    strings.setLocale('he');
+    expect(strings.t('btn.start')).toBe('התחל');
+    expect(strings.t('attendee.present')).toBe('נוכח (Present)');
+    expect(strings.t('status.tracking')).toBe('מתעד נוכחות…');
+
+    // Marathi
+    strings.setLocale('mr');
+    expect(strings.t('btn.start')).toBe('सुरू करा');
+    expect(strings.t('attendee.present')).toBe('उपस्थित (Present)');
+    expect(strings.t('status.tracking')).toBe('उपस्थिती नोंदवत आहे…');
+
+    // Swedish
+    strings.setLocale('sv');
+    expect(strings.t('btn.start')).toBe('Starta');
+    expect(strings.t('attendee.present')).toBe('Närvarande (Present)');
+    expect(strings.t('status.tracking')).toBe('Spårar närvaro…');
   });
 
   test('persists locale to localStorage when requested', () => {
@@ -163,6 +181,10 @@ describe('detectLocale', () => {
     expect(strings.detectLocale('zh-TW')).toBe('zh');
     expect(strings.detectLocale('zh-HK')).toBe('zh');
     expect(strings.detectLocale('ja-JP')).toBe('ja');
+    expect(strings.detectLocale('he-IL')).toBe('he');
+    expect(strings.detectLocale('iw-IL')).toBe('he');
+    expect(strings.detectLocale('mr-IN')).toBe('mr');
+    expect(strings.detectLocale('sv-SE')).toBe('sv');
     expect(strings.detectLocale('en-US')).toBe('en');
     expect(strings.detectLocale('xx-YY')).toBe('en'); // unknown fallback
   });

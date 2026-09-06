@@ -4,8 +4,8 @@
 // via navigator.language / localStorage, and dynamic DOM translation helpers.
 // Loaded synchronously in <head> so window.t exists before any inline script runs.
 //
-// Supported locales (27):
-// en, es, pt, hi, ta, te, bn, ur, tl, ms, id, vi, fr, de, it, nl, pl, ro, ru, uk, tr, th, ar, ko, zh, zh-CN, ja.
+// Supported locales (30):
+// en, es, pt, hi, ta, te, bn, ur, tl, ms, id, vi, fr, de, it, nl, pl, ro, ru, uk, tr, th, ar, ko, zh, zh-CN, ja, he, mr, sv.
 //
 // Kept as a standalone file so it can be unit-tested in jsdom in isolation.
 (function (root) {
@@ -146,6 +146,21 @@
         "code": "ja",
         "label": "日本語",
         "flag": "🇯🇵"
+    },
+    {
+        "code": "he",
+        "label": "עברית",
+        "flag": "🇮🇱"
+    },
+    {
+        "code": "mr",
+        "label": "मराठी",
+        "flag": "🇮🇳"
+    },
+    {
+        "code": "sv",
+        "label": "Svenska",
+        "flag": "🇸🇪"
     }
 ];
 
@@ -237,7 +252,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "es": {
         "lang.en": "English",
@@ -326,7 +344,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "pt": {
         "lang.en": "English",
@@ -415,7 +436,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "hi": {
         "lang.en": "English",
@@ -504,7 +528,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "tl": {
         "lang.en": "English",
@@ -593,7 +620,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "ms": {
         "lang.en": "English",
@@ -682,7 +712,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "id": {
         "lang.en": "English",
@@ -771,7 +804,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "vi": {
         "lang.en": "English",
@@ -860,7 +896,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "fr": {
         "lang.en": "English",
@@ -949,7 +988,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "de": {
         "lang.en": "English",
@@ -1038,7 +1080,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "it": {
         "lang.en": "English",
@@ -1127,7 +1172,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "nl": {
         "lang.en": "English",
@@ -1216,7 +1264,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "pl": {
         "lang.en": "English",
@@ -1305,7 +1356,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "tr": {
         "lang.en": "English",
@@ -1394,7 +1448,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "th": {
         "lang.en": "English",
@@ -1483,7 +1540,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "ar": {
         "lang.en": "English",
@@ -1572,7 +1632,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "ko": {
         "lang.en": "English",
@@ -1661,7 +1724,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "zh": {
         "lang.en": "English",
@@ -1750,7 +1816,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "ja": {
         "lang.en": "English",
@@ -1839,7 +1908,10 @@
         "lang.ro": "Română",
         "lang.ru": "Русский",
         "lang.uk": "Українська",
-        "lang.zh-CN": "简体中文"
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     },
     "ta": {
         "lang.en": "English",
@@ -1868,6 +1940,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "துவங்குகிறது…",
         "status.tracking": "வருகை பதிவு செய்யப்படுகிறது…",
@@ -1957,6 +2032,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "ప్రారంభమవుతోంది…",
         "status.tracking": "హాజరు నమోదు అవుతోంది…",
@@ -2046,6 +2124,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "শুরু হচ্ছে…",
         "status.tracking": "উপস্থিতি রেকর্ড করা হচ্ছে…",
@@ -2135,6 +2216,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "آغاز ہو رہا ہے…",
         "status.tracking": "حاضری ریکارڈ کی جا رہی ہے…",
@@ -2224,6 +2308,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "正在初始化…",
         "status.tracking": "正在记录考勤…",
@@ -2313,6 +2400,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "Инициализация…",
         "status.tracking": "Учёт посещаемости…",
@@ -2402,6 +2492,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "Ініціалізація…",
         "status.tracking": "Облік відвідуваності…",
@@ -2491,6 +2584,9 @@
         "lang.ko": "한국어",
         "lang.zh": "繁體中文",
         "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska",
         "lang.ja": "日本語",
         "status.initializing": "Inițializare…",
         "status.tracking": "Se înregistrează prezența…",
@@ -2552,6 +2648,282 @@
         "toast.exportSuccess": "Prezența a fost salvată în Google Sheets",
         "toast.exportFailed": "Exportul prezenței a eșuat",
         "toast.syncSuccess": "Sincronizat cu Google Meet"
+    },
+    "he": {
+        "lang.en": "English",
+        "lang.es": "Español",
+        "lang.pt": "Português",
+        "lang.hi": "हिन्दी",
+        "lang.tl": "Tagalog",
+        "lang.ms": "Bahasa Melayu",
+        "lang.id": "Bahasa Indonesia",
+        "lang.vi": "Tiếng Việt",
+        "lang.fr": "Français",
+        "lang.de": "Deutsch",
+        "lang.it": "Italiano",
+        "lang.nl": "Nederlands",
+        "lang.pl": "Polski",
+        "lang.tr": "Türkçe",
+        "lang.th": "ภาษาไทย",
+        "lang.ar": "العربية",
+        "lang.ko": "한국어",
+        "lang.zh": "繁體中文",
+        "lang.ja": "日本語",
+        "status.initializing": "מאתחל…",
+        "status.tracking": "מתעד נוכחות…",
+        "status.stopped": "מעקב הנוכחות הופסק",
+        "status.syncing": "מסנכרן…",
+        "status.exported": "יוצא ל-Google Sheets",
+        "status.notTracking": "לא מתבצע מעקב",
+        "status.connected": "מחובר",
+        "btn.start": "התחל",
+        "btn.stop": "עצור",
+        "btn.sync": "סנכרן",
+        "btn.sheet": "גיליון",
+        "btn.export": "ייצא",
+        "btn.exporting": "מייצא…",
+        "btn.saveToSheets": "שמור ב-Google Sheets",
+        "btn.downloadCsv": "הורד CSV",
+        "btn.share": "שתף",
+        "btn.signIn": "התחבר עם Google",
+        "btn.signOut": "התנתק",
+        "btn.copyLink": "העתק קישור",
+        "btn.close": "סגור",
+        "btn.cancel": "ביטול",
+        "btn.confirm": "אישור",
+        "btn.refresh": "רענן",
+        "btn.filter": "סנן",
+        "attendee.present": "נוכח (Present)",
+        "attendee.absent": "נעדר (Absent)",
+        "attendee.late": "איחר (Late)",
+        "attendee.excused": "מוצדק (Excused)",
+        "attendee.left": "עזב",
+        "attendee.rejoined": "הצטרף מחדש",
+        "attendee.self": "(אתה)",
+        "attendee.duration": "משך זמן",
+        "attendee.joinedAt": "הצטרף בשעה",
+        "attendee.leftAt": "עזב בשעה",
+        "attendee.noShows": "לא הופיעו",
+        "attendee.totalCount": "סה\"כ משתתפים",
+        "attendee.activeCount": "בשיחה כעת",
+        "nav.history": "היסטוריית פגישות",
+        "nav.series": "סדרות",
+        "nav.people": "אנשים",
+        "nav.calendar": "לוח שנה",
+        "nav.team": "צוות",
+        "nav.admin": "ניהול",
+        "nav.settings": "הגדרות",
+        "filter.all": "הכל",
+        "filter.present": "נוכח",
+        "filter.absent": "נעדר",
+        "filter.late": "איחר",
+        "filter.excused": "מוצדק",
+        "toast.autoExportOn": "ייצוא אוטומטי הופעל",
+        "toast.autoExportOff": "ייצוא אוטומטי כבוי",
+        "toast.emailOn": "התראות דוא\"ל הופעלו",
+        "toast.emailOff": "התראות דוא\"ל כבויות",
+        "toast.signedOut": "התנתקת בהצלחה",
+        "toast.signInFirst": "יש להתחבר כדי להתחיל במעקב נוכחות",
+        "toast.accountDeleted": "חשבונך וכל הנתונים שלך נמחקו.",
+        "toast.linkCopied": "הקישור הועתק ללוח",
+        "toast.exportSuccess": "הנוכחות נשמרה ב-Google Sheets",
+        "toast.exportFailed": "ייצוא הנוכחות נכשל",
+        "toast.syncSuccess": "סונכרן עם Google Meet",
+        "lang.ta": "தமிழ்",
+        "lang.te": "తెలుగు",
+        "lang.bn": "বাংলা",
+        "lang.ur": "اردو",
+        "lang.ro": "Română",
+        "lang.ru": "Русский",
+        "lang.uk": "Українська",
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
+    },
+    "mr": {
+        "lang.en": "English",
+        "lang.es": "Español",
+        "lang.pt": "Português",
+        "lang.hi": "हिन्दी",
+        "lang.tl": "Tagalog",
+        "lang.ms": "Bahasa Melayu",
+        "lang.id": "Bahasa Indonesia",
+        "lang.vi": "Tiếng Việt",
+        "lang.fr": "Français",
+        "lang.de": "Deutsch",
+        "lang.it": "Italiano",
+        "lang.nl": "Nederlands",
+        "lang.pl": "Polski",
+        "lang.tr": "Türkçe",
+        "lang.th": "ภาษาไทย",
+        "lang.ar": "العربية",
+        "lang.ko": "한국어",
+        "lang.zh": "繁體中文",
+        "lang.ja": "日本語",
+        "status.initializing": "सुरू होत आहे…",
+        "status.tracking": "उपस्थिती नोंदवत आहे…",
+        "status.stopped": "नोंदणी थांबवली",
+        "status.syncing": "सिंक होत आहे…",
+        "status.exported": "Google Sheets मध्ये एक्सपोर्ट केले",
+        "status.notTracking": "नोंदणी चालू नाही",
+        "status.connected": "कनेक्ट झाले",
+        "btn.start": "सुरू करा",
+        "btn.stop": "थांबवा",
+        "btn.sync": "सिंक करा",
+        "btn.sheet": "शीट",
+        "btn.export": "एक्सपोर्ट करा",
+        "btn.exporting": "एक्सपोर्ट होत आहे…",
+        "btn.saveToSheets": "Google Sheets मध्ये सेव्ह करा",
+        "btn.downloadCsv": "CSV डाउनलोड करा",
+        "btn.share": "शेअर करा",
+        "btn.signIn": "Google द्वारे साइन इन करा",
+        "btn.signOut": "साइन आउट",
+        "btn.copyLink": "लिंक कॉपी करा",
+        "btn.close": "बंद करा",
+        "btn.cancel": "रद्द करा",
+        "btn.confirm": "नक्की करा",
+        "btn.refresh": "रिफ्रेश करा",
+        "btn.filter": "फिल्टर करा",
+        "attendee.present": "उपस्थित (Present)",
+        "attendee.absent": "अनुपस्थित (Absent)",
+        "attendee.late": "उशिरा (Late)",
+        "attendee.excused": "माफ केलेले (Excused)",
+        "attendee.left": "बाहेर पडले",
+        "attendee.rejoined": "पुन्हा जॉईन झाले",
+        "attendee.self": "(तुम्ही)",
+        "attendee.duration": "कालावधी",
+        "attendee.joinedAt": "जॉईन वेळ",
+        "attendee.leftAt": "बाहेर पडण्याची वेळ",
+        "attendee.noShows": "गैरहजर",
+        "attendee.totalCount": "एकूण सहभागी",
+        "attendee.activeCount": "कॉलमध्ये उपस्थित",
+        "nav.history": "मीटिंग इतिहास",
+        "nav.series": "मालिका",
+        "nav.people": "लोक",
+        "nav.calendar": "कॅलेंडर",
+        "nav.team": "टीम",
+        "nav.admin": "अ‍ॅडमिन",
+        "nav.settings": "सेटिंग्ज",
+        "filter.all": "सर्व",
+        "filter.present": "उपस्थित",
+        "filter.absent": "अनुपस्थित",
+        "filter.late": "उशिरा",
+        "filter.excused": "माफ केलेले",
+        "toast.autoExportOn": "ऑटो-एक्सपोर्ट सुरू केले",
+        "toast.autoExportOff": "ऑटो-एक्सपोर्ट बंद केले",
+        "toast.emailOn": "ईमेल सूचना सुरू केल्या",
+        "toast.emailOff": "ईमेल सूचना बंद केल्या",
+        "toast.signedOut": "साइन आउट केले",
+        "toast.signInFirst": "उपस्थिती नोंदवण्यासाठी कृपया साइन इन करा",
+        "toast.accountDeleted": "आपले खाते आणि डेटा यशस्वीरित्या हटवले गेले.",
+        "toast.linkCopied": "लिंक क्लिपबोर्डवर कॉपी केली",
+        "toast.exportSuccess": "उपस्थिती Google Sheets मध्ये सेव्ह केली",
+        "toast.exportFailed": "उपस्थिती एक्सपोर्ट करण्यात अयशस्वी",
+        "toast.syncSuccess": "Google Meet सह सिंक झाले",
+        "lang.ta": "தமிழ்",
+        "lang.te": "తెలుగు",
+        "lang.bn": "বাংলা",
+        "lang.ur": "اردو",
+        "lang.ro": "Română",
+        "lang.ru": "Русский",
+        "lang.uk": "Українська",
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
+    },
+    "sv": {
+        "lang.en": "English",
+        "lang.es": "Español",
+        "lang.pt": "Português",
+        "lang.hi": "हिन्दी",
+        "lang.tl": "Tagalog",
+        "lang.ms": "Bahasa Melayu",
+        "lang.id": "Bahasa Indonesia",
+        "lang.vi": "Tiếng Việt",
+        "lang.fr": "Français",
+        "lang.de": "Deutsch",
+        "lang.it": "Italiano",
+        "lang.nl": "Nederlands",
+        "lang.pl": "Polski",
+        "lang.tr": "Türkçe",
+        "lang.th": "ภาษาไทย",
+        "lang.ar": "العربية",
+        "lang.ko": "한국어",
+        "lang.zh": "繁體中文",
+        "lang.ja": "日本語",
+        "status.initializing": "Initierar…",
+        "status.tracking": "Spårar närvaro…",
+        "status.stopped": "Närvarospårning stoppad",
+        "status.syncing": "Synkroniserar…",
+        "status.exported": "Exporterad till Google Sheets",
+        "status.notTracking": "Spårar inte",
+        "status.connected": "Ansluten",
+        "btn.start": "Starta",
+        "btn.stop": "Stoppa",
+        "btn.sync": "Synka",
+        "btn.sheet": "Kalkylark",
+        "btn.export": "Exportera",
+        "btn.exporting": "Exporterar…",
+        "btn.saveToSheets": "Spara till Google Sheets",
+        "btn.downloadCsv": "Ladda ner CSV",
+        "btn.share": "Dela",
+        "btn.signIn": "Logga in med Google",
+        "btn.signOut": "Logga ut",
+        "btn.copyLink": "Kopiera länk",
+        "btn.close": "Stäng",
+        "btn.cancel": "Avbryt",
+        "btn.confirm": "Bekräfta",
+        "btn.refresh": "Uppdatera",
+        "btn.filter": "Filtrera",
+        "attendee.present": "Närvarande (Present)",
+        "attendee.absent": "Frånvarande (Absent)",
+        "attendee.late": "Sen (Late)",
+        "attendee.excused": "Giltig frånvaro (Excused)",
+        "attendee.left": "Lämnade",
+        "attendee.rejoined": "Återanslöt",
+        "attendee.self": "(Du)",
+        "attendee.duration": "Varaktighet",
+        "attendee.joinedAt": "Anslöt kl",
+        "attendee.leftAt": "Lämnade kl",
+        "attendee.noShows": "Uteblev",
+        "attendee.totalCount": "Totalt antal deltagare",
+        "attendee.activeCount": "I samtalet",
+        "nav.history": "Möteshistorik",
+        "nav.series": "Serier",
+        "nav.people": "Personer",
+        "nav.calendar": "Kalender",
+        "nav.team": "Team",
+        "nav.admin": "Admin",
+        "nav.settings": "Inställningar",
+        "filter.all": "Alla",
+        "filter.present": "Närvarande",
+        "filter.absent": "Frånvarande",
+        "filter.late": "Sena",
+        "filter.excused": "Giltig frånvaro",
+        "toast.autoExportOn": "Automatisk export på",
+        "toast.autoExportOff": "Automatisk export av",
+        "toast.emailOn": "E-postnotiser på",
+        "toast.emailOff": "E-postnotiser av",
+        "toast.signedOut": "Utloggad",
+        "toast.signInFirst": "Logga in för att börja spåra närvaro",
+        "toast.accountDeleted": "Ditt konto och dina data har raderats.",
+        "toast.linkCopied": "Länk kopierad till urklipp",
+        "toast.exportSuccess": "Närvaro sparad i Google Sheets",
+        "toast.exportFailed": "Kunde inte exportera närvaro",
+        "toast.syncSuccess": "Synkroniserad med Google Meet",
+        "lang.ta": "தமிழ்",
+        "lang.te": "తెలుగు",
+        "lang.bn": "বাংলা",
+        "lang.ur": "اردو",
+        "lang.ro": "Română",
+        "lang.ru": "Русский",
+        "lang.uk": "Українська",
+        "lang.zh-CN": "简体中文",
+        "lang.he": "עברית",
+        "lang.mr": "मराठी",
+        "lang.sv": "Svenska"
     }
 };
 
@@ -2586,6 +2958,9 @@
     if (raw.startsWith('te')) return 'te';
     if (raw.startsWith('bn')) return 'bn';
     if (raw.startsWith('ur')) return 'ur';
+    if (raw.startsWith('he') || raw.startsWith('iw')) return 'he';
+    if (raw.startsWith('mr')) return 'mr';
+    if (raw.startsWith('sv')) return 'sv';
     if (raw.startsWith('ru')) return 'ru';
     if (raw.startsWith('uk')) return 'uk';
     if (raw.startsWith('ro')) return 'ro';
