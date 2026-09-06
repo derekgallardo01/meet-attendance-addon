@@ -247,7 +247,7 @@ async function maybeSendSignupNotification(domain, email) {
   const payload = await claimSignupNotification(domain, email);
   if (!payload) return { sent: false };
   const totalUsers = await countAllUsers();
-  return sendSignupWebhook({
+  const ownerResult = await sendSignupWebhook({
     email: payload.email,
     displayName: payload.displayName,
     domain: payload.domain,
@@ -258,6 +258,13 @@ async function maybeSendSignupNotification(domain, email) {
     signupIp: payload.signupIp,
     signupGeo: payload.signupGeo,
   });
+
+  // Welcome email to the newly signed up user (fire-and-forget)
+  sendWelcomeEmail({ to: payload.email, displayName: payload.displayName }).catch(err => {
+    log.warn('welcome email failed', { to: payload.email, error: err.message });
+  });
+
+  return ownerResult;
 }
 
 // Referral win: tell the inviter that someone they invited just joined and
@@ -715,6 +722,36 @@ async function sendPersonalEmail({ to, displayName, subject, lines, tags, htmlLi
   }, `${logLabel} email`, logMeta);
 }
 
+async function sendWelcomeEmail({ to, displayName }) {
+  const lines = [
+    `Thanks for installing Attendance Tracker for Google Meet!`,
+    '',
+    `Here is how to track your first meeting in 3 quick steps:`,
+    '',
+    `1. Open Google Meet and start or join any call.`,
+    `2. Click the Activities icon (shapes in the bottom-right corner) and open Attendance Tracker.`,
+    `3. Click "Start" — join times, leave times, and stay durations update live. When you're ready, click "Sheet" to export to Google Sheets in one click.`,
+    '',
+    `Tip: If you're testing right now in an empty call, click "🧪 Testing solo? Load 10 demo students" inside the side panel to see how it works before your next real meeting.`,
+    '',
+    `Watch the 30-second video demo: https://youtu.be/WqX-LxjjY04`,
+    '',
+    `If you have any questions or run into anything, just reply directly to this email — I read every response.`,
+    '',
+    'Best,',
+    'Derek',
+    'Creator of Attendance Tracker',
+    'https://attendancetracker.dev',
+  ];
+  return sendPersonalEmail({
+    to, displayName,
+    subject: 'Welcome to Attendance Tracker for Google Meet',
+    lines,
+    tags: [{ name: 'type', value: 'welcome' }],
+    logLabel: 'welcome', logMeta: {},
+  });
+}
+
 async function sendReactivationEmail({ to, displayName, daysSinceLogin, variant }) {
   const lines = variant === '7d' ? [
     `It's been about a week since you last opened Attendance Tracker. Quick question — was there something missing or confusing that kept you from using it for your meetings?`,
@@ -983,7 +1020,7 @@ async function sendSlackTestPing({ webhookUrl }) {
 }
 
 module.exports = {
-  sendSignupWebhook, maybeSendSignupNotification, sendReferralNotification, maybeSendReferralNotification, flushDeferredNotifications, sendAdminEmail, sendWeeklySelfReport, sendExportNotification,
+  sendSignupWebhook, maybeSendSignupNotification, sendWelcomeEmail, sendReferralNotification, maybeSendReferralNotification, flushDeferredNotifications, sendAdminEmail, sendWeeklySelfReport, sendExportNotification,
   sendSeriesAlertEmail, sendFeedbackEmail, sendReactivationEmail, sendActivationNudgeEmail, sendSoloNudgeEmail, sendForgottenMeetingEmail, sendComebackEmail, sendExportGapEmail, sendUpcomingMeetingEmail,
   sendSlackDigest, sendSlackTestPing, buildSlackDigestBlocks, buildSlackFallbackText, maskSlackWebhook,
   unsubscribeUrl, unsubscribeToken, verifyUnsubscribeToken, unsubscribeFooter,

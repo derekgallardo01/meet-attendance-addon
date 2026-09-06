@@ -43,18 +43,23 @@ router.post('/billing/checkout', requireAuth, async (req, res) => {
   const stripe = getStripe();
   const domain = req.user.domain;
   const email = req.user.email;
-  const individual = req.body && (req.body.plan === 'team' || req.body.plan === 'lifetime')
-    ? false
-    : (req.body && req.body.plan === 'individual' ? true : isPersonalDomain(domain));
+  const isEducator = req.body && req.body.plan === 'educator';
+  const individual = isEducator
+    ? true
+    : (req.body && (req.body.plan === 'team' || req.body.plan === 'lifetime')
+      ? false
+      : (req.body && req.body.plan === 'individual' ? true : isPersonalDomain(domain)));
   // Personal-email users buy the INDIVIDUAL (per-user) plan; Workspace domains
   // buy the per-domain org plan. Each has monthly + optional annual prices.
   // Annual falls back to monthly when its price id isn't set, so annual can be
   // dark-launched (and the frontend only offers it when annualAvailable, below).
   /* istanbul ignore next: express.json always sets req.body to an object */
   const annual = (req.body || {}).interval === 'annual';
-  const priceId = individual
-    ? (annual && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID
-    : (annual && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID;
+  const priceId = isEducator
+    ? (process.env.STRIPE_EDUCATOR_PRICE_ID || process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID)
+    : (individual
+      ? (annual && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID
+      : (annual && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID);
   if (!stripe || !priceId) {
     return res.status(503).json({ error: 'Billing is not configured yet.' });
   }
@@ -121,11 +126,14 @@ router.post('/billing/public-checkout', async (req, res) => {
   const interval = req.body?.interval || 'annual';
   const email = (req.body?.email || '').trim().toLowerCase() || undefined;
   const isTeam = plan === 'team';
-  const priceId = isTeam
-    ? ((interval === 'annual' && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID)
-    : (plan === 'lifetime'
-        ? (process.env.STRIPE_INDIVIDUAL_LIFETIME_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID)
-        : ((interval === 'annual' && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID));
+  const isEducator = plan === 'educator';
+  const priceId = isEducator
+    ? (process.env.STRIPE_EDUCATOR_PRICE_ID || process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID)
+    : (isTeam
+        ? ((interval === 'annual' && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID)
+        : (plan === 'lifetime'
+            ? (process.env.STRIPE_INDIVIDUAL_LIFETIME_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID)
+            : ((interval === 'annual' && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID)));
 
   if (!priceId) {
     return res.status(503).json({ error: 'Selected plan price is not configured.' });
@@ -227,6 +235,7 @@ router.get('/billing/status', requireAuth, async (req, res) => {
       individual,
       billingConfigured: individual ? individualBillingConfigured() : billingConfigured(),
       annualAvailable,
+      educatorAvailable: !!process.env.STRIPE_EDUCATOR_PRICE_ID,
     });
   } catch (err) {
     log.error('billing: status failed', { domain: req.user.domain, error: err.message });

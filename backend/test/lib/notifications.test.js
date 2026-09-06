@@ -322,16 +322,19 @@ describe('notifications — content sanity checks', () => {
 
     // First call: a pending signup is claimed → the email goes out with the
     // self-reported source, and the total-users count is looked up at send time.
+    // Also fires a welcome email directly to the new user.
     await n.maybeSendSignupNotification('x.com', 'a@x.com');
     expect(claimSignupNotification).toHaveBeenCalledWith('x.com', 'a@x.com');
-    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(mockSend).toHaveBeenCalledTimes(2);
     expect(mockSend.mock.calls[0][0].subject).toContain('google_search');
     expect(mockSend.mock.calls[0][0].text).toContain('Total users now: 22');
+    expect(mockSend.mock.calls[1][0].subject).toBe('Welcome to Attendance Tracker for Google Meet');
+    expect(mockSend.mock.calls[1][0].to).toEqual(['a@x.com']);
 
     // Second call: nothing pending (claim returns null) → no email.
     const res = await n.maybeSendSignupNotification('x.com', 'a@x.com');
     expect(res).toEqual({ sent: false });
-    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(mockSend).toHaveBeenCalledTimes(2);
 
     jest.dontMock('../../src/services/firestore');
   });
@@ -530,6 +533,12 @@ describe('notifications — additional senders (Resend mocked)', () => {
   test('sendSoloNudgeEmail sends a solo-tester nudge', async () => {
     const n = require('../../src/lib/notifications');
     await n.sendSoloNudgeEmail({ to: 'u@x.com', displayName: 'U', daysSinceLogin: 8 });
+    expect(mockSend).toHaveBeenCalled();
+  });
+
+  test('sendWelcomeEmail sends a welcome email to a new user', async () => {
+    const n = require('../../src/lib/notifications');
+    await n.sendWelcomeEmail({ to: 'newuser@school.edu', displayName: 'Prof Smith' });
     expect(mockSend).toHaveBeenCalled();
   });
 });

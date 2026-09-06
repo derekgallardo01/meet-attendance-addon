@@ -590,5 +590,22 @@ describe('billing — public-checkout for marketing pages', () => {
     expect(res.status).toBe(503);
     process.env.STRIPE_SECRET_KEY = oldKey;
   });
+
+  test('creates a public checkout session for educator pass', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_x';
+    process.env.STRIPE_EDUCATOR_PRICE_ID = 'price_educator_499';
+    mockStripeInstance.checkout.sessions.create.mockResolvedValueOnce({ url: 'https://checkout.stripe.com/educator_pay' });
+
+    const res = await request(app)
+      .post('/api/billing/public-checkout')
+      .send({ plan: 'educator', email: 'teacher@deped.gov.ph' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.url).toBe('https://checkout.stripe.com/educator_pay');
+    expect(mockStripeInstance.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({
+      line_items: [{ price: 'price_educator_499', quantity: 1 }],
+      customer_email: 'teacher@deped.gov.ph',
+    }));
+  });
 });
 

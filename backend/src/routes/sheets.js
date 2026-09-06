@@ -382,7 +382,12 @@ async function buildAndSaveExport({ user, sheetsAuth, data, options }) {
 
     const allRows = [...rows, ...noShows];
 
-    const allValues = [...summary, header, ...allRows];
+    const footer = [
+      [],
+      ['Tracked automatically with Attendance Tracker for Google Meet · https://attendancetracker.dev'],
+    ];
+
+    const allValues = [...summary, header, ...allRows, ...footer];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `'${tabName}'!A1`,
