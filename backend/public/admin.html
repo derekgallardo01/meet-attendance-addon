@@ -287,8 +287,8 @@
 
       <!-- Super admin: founder tools bar -->
       <div id="founder-tools" style="display:none;justify-content:flex-end;gap:8px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="sendWeeklyReport()" id="btn-weekly" style="font-size:.78rem">📊 Send weekly report to my inbox</button>
-        <button class="btn btn-secondary" onclick="openTemplatesModal()" style="font-size:.78rem">📝 Email templates</button>
+        <button class="btn btn-secondary" onclick="sendWeeklyReport()" id="btn-weekly" style="font-size:.78rem">Send weekly report to my inbox</button>
+        <button class="btn btn-secondary" onclick="openTemplatesModal()" style="font-size:.78rem">Email templates</button>
       </div>
 
       <!-- Super admin: live founder loop sections -->
@@ -297,7 +297,7 @@
           <!-- Reach out NOW -->
           <div class="section" style="margin-bottom:0">
             <h2 style="display:flex;justify-content:space-between;align-items:center">
-              <span>🔥 Reach out now</span>
+              <span>Reach out now</span>
               <button class="btn btn-secondary" style="font-size:.7rem;padding:4px 8px" onclick="loadSuggestions()">↻</button>
             </h2>
             <div id="suggestions-list" style="display:flex;flex-direction:column;gap:10px">
@@ -353,27 +353,27 @@
         <!-- Segment cards -->
         <div class="stats-grid">
           <div class="stat-card" onclick="filterUsersBy('new')" style="cursor:pointer">
-            <div class="stat-label">🌱 New</div>
+            <div class="stat-label">New</div>
             <div class="stat-value" id="seg-new" style="color:#9ec8ff">—</div>
             <div class="stat-label">&lt;3d, never tracked</div>
           </div>
           <div class="stat-card" onclick="filterUsersBy('activating')" style="cursor:pointer">
-            <div class="stat-label">⚡ Activating</div>
+            <div class="stat-label">Activating</div>
             <div class="stat-value" id="seg-activating" style="color:#fbbf24">—</div>
             <div class="stat-label">&lt;14d, never tracked</div>
           </div>
           <div class="stat-card" onclick="filterUsersBy('active')" style="cursor:pointer">
-            <div class="stat-label">✅ Active</div>
+            <div class="stat-label">Active</div>
             <div class="stat-value green" id="seg-active">—</div>
             <div class="stat-label">Tracked in last 14d</div>
           </div>
           <div class="stat-card" onclick="filterUsersBy('atRisk')" style="cursor:pointer">
-            <div class="stat-label">⚠ At-risk</div>
+            <div class="stat-label">At-risk</div>
             <div class="stat-value" id="seg-atRisk" style="color:#fbbf24">—</div>
             <div class="stat-label">14-30d since last activity</div>
           </div>
           <div class="stat-card" onclick="filterUsersBy('churned')" style="cursor:pointer">
-            <div class="stat-label">💀 Churned</div>
+            <div class="stat-label">Churned</div>
             <div class="stat-value red" id="seg-churned">—</div>
             <div class="stat-label">30d+ inactive</div>
           </div>
@@ -406,7 +406,7 @@
 
         <!-- Multi-user orgs (network effect leads) -->
         <div class="section">
-          <h2>🌐 Multi-user organizations <span style="color:var(--muted);font-weight:400;font-size:.8rem">— network effect leads</span></h2>
+          <h2>Multi-user organizations <span style="color:var(--muted);font-weight:400;font-size:.8rem">— network effect leads</span></h2>
           <table>
             <thead><tr><th>Domain</th><th>Users</th><th>1st user joined</th><th>Most recent</th><th>1st user active?</th></tr></thead>
             <tbody id="multi-org-rows"><tr><td colspan="5" style="color:var(--muted)">No multi-user orgs yet.</td></tr></tbody>
@@ -983,7 +983,7 @@
             <div style="font-size:.78rem;color:#c9d1d9;margin:6px 0">${esc(s.reason)}</div>
             <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">${esc(s.ctaTime)} · ${timeAgo(s.lastEventAt)}</div>
             <div style="display:flex;gap:6px">
-              <a href="mailto:${esc(s.email)}?subject=${encodeURIComponent('Quick question about Attendance Tracker')}" style="background:var(--accent);color:var(--bg);text-decoration:none;padding:4px 10px;border-radius:6px;font-size:.72rem;font-weight:600">📧 Email</a>
+              <a href="mailto:${esc(s.email)}?subject=${encodeURIComponent('Quick question about Attendance Tracker')}" style="background:var(--accent);color:var(--bg);text-decoration:none;padding:4px 10px;border-radius:6px;font-size:.72rem;font-weight:600">Email</a>
               <button onclick="markContacted('${esc(s.email)}','${esc(s.domain)}')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.72rem;cursor:pointer">✓ Mark contacted</button>
             </div>
           </div>
@@ -1004,7 +1004,7 @@
           feed.innerHTML = '<div style="color:var(--muted)">No activity yet</div>';
           return;
         }
-        const icon = { signin: '👋', tracked: '📋', exported: '📊' };
+        const icon = { signin: '', tracked: '', exported: '' };
         const label = { signin: 'signed in', tracked: 'tracked a meeting', exported: 'exported to Sheets' };
         feed.innerHTML = events.map(e => `
           <div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
@@ -1038,7 +1038,7 @@
             <td>${u.exported}</td>
             <td style="color:var(--muted);font-size:.8rem">${esc(u.acquisitionSource || '—')}</td>
             <td style="color:var(--muted);font-size:.8rem">${timeAgo(u.lastActivityAt)}</td>
-            <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;justify-content:flex-end"><button onclick="openEmailModal('${esc(u.email)}','${esc(u.domain)}','${esc(u.displayName)}','${u.tracked}','${u.exported}','?')" style="background:var(--accent);color:var(--bg);border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer">📧</button><button onclick="markContacted('${esc(u.email)}','${esc(u.domain)}')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.72rem;cursor:pointer">✓</button></div></td>
+            <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;justify-content:flex-end"><button onclick="openEmailModal('${esc(u.email)}','${esc(u.domain)}','${esc(u.displayName)}','${u.tracked}','${u.exported}','?')" style="background:var(--accent);color:var(--bg);border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer"></button><button onclick="markContacted('${esc(u.email)}','${esc(u.domain)}')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.72rem;cursor:pointer">✓</button></div></td>
           </tr>
         `).join('');
       } catch (err) {
@@ -1058,10 +1058,10 @@
         });
         if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
         btn.textContent = '✓ Sent';
-        setTimeout(() => { btn.textContent = '📊 Send weekly report to my inbox'; btn.disabled = false; }, 3000);
+        setTimeout(() => { btn.textContent = 'Send weekly report to my inbox'; btn.disabled = false; }, 3000);
       } catch (err) {
-        btn.textContent = '⚠ ' + err.message;
-        setTimeout(() => { btn.textContent = '📊 Send weekly report to my inbox'; btn.disabled = false; }, 4000);
+        btn.textContent = '' + err.message;
+        setTimeout(() => { btn.textContent = 'Send weekly report to my inbox'; btn.disabled = false; }, 4000);
       }
     }
 
@@ -1191,7 +1191,7 @@
     function filterUsersBy(segment) {
       if (!_analytics) return;
       const users = _analytics.userHealth.filter(u => u.segment === segment);
-      const segLabels = { new: '🌱 New users', activating: '⚡ Activating', active: '✅ Active', atRisk: '⚠ At-risk', churned: '💀 Churned' };
+      const segLabels = { new: 'New users', activating: 'Activating', active: 'Active', atRisk: 'At-risk', churned: 'Churned' };
       document.getElementById('segment-list-title').textContent = `${segLabels[segment]} (${users.length})`;
       document.getElementById('segment-list-section').style.display = 'block';
       document.getElementById('segment-list-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1241,7 +1241,7 @@
 
     function renderUserDetail(u) {
       document.getElementById('um-title').innerHTML = `${esc(u.displayName || u.email)} ${healthBadge(u.healthScore)}`;
-      const eventIcons = { signin: '👋', tracked: '📋', exported: '📊' };
+      const eventIcons = { signin: '', tracked: '', exported: '' };
       const c = u.conversation || [];
       const convoHtml = c.length === 0
         ? '<div style="color:var(--muted);font-size:.8rem">No conversation yet. Click Send email to start one.</div>'
@@ -1282,10 +1282,10 @@
             <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Outreach ${statusBadge}</div>
             <div style="font-size:.8rem;line-height:1.6"><span style="color:var(--muted)">Last contacted:</span> ${esc(fmtDateTime(u.outreach?.lastEmailedAt || u.outreach?.contactedAt))}</div>
             <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-              <button onclick="openEmailModal('${esc(u.email)}','${esc(u.domain)}','${esc(u.displayName)}','${u.counts.tracked}','${u.counts.exported}','${ageDaysCalc(u.createdAt)}')" class="btn btn-primary" style="font-size:.72rem;padding:5px 10px">📧 Send email</button>
+              <button onclick="openEmailModal('${esc(u.email)}','${esc(u.domain)}','${esc(u.displayName)}','${u.counts.tracked}','${u.counts.exported}','${ageDaysCalc(u.createdAt)}')" class="btn btn-primary" style="font-size:.72rem;padding:5px 10px">Send email</button>
               <button onclick="openReminderModal('${esc(u.email)}','${esc(u.domain)}','${esc(u.displayName)}')" class="btn btn-secondary" style="font-size:.72rem;padding:5px 10px">⏰ Remind me</button>
               <button onclick="markReply('${esc(u.email)}','${esc(u.domain)}','replied')" class="btn btn-secondary" style="font-size:.72rem;padding:5px 10px">↩ Replied</button>
-              <button onclick="markReply('${esc(u.email)}','${esc(u.domain)}','ghosted')" class="btn btn-secondary" style="font-size:.72rem;padding:5px 10px">👻 Ghosted</button>
+              <button onclick="markReply('${esc(u.email)}','${esc(u.domain)}','ghosted')" class="btn btn-secondary" style="font-size:.72rem;padding:5px 10px">Ghosted</button>
             </div>
           </div>
         </div>
@@ -1339,7 +1339,7 @@
         status.textContent = '✓ Saved';
         setTimeout(() => status.textContent = '', 2000);
       } catch (err) {
-        status.textContent = '⚠ Failed';
+        status.textContent = 'Failed';
       }
     }
 
@@ -1416,7 +1416,7 @@
         }
         setTimeout(closeEmailModal, 800);
       } catch (err) {
-        document.getElementById('em-status').textContent = '⚠ ' + err.message;
+        document.getElementById('em-status').textContent = '' + err.message;
         btn.disabled = false;
       }
     }

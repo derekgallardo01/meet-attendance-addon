@@ -154,12 +154,12 @@
     <!-- Dashboard -->
     <div id="dashboard">
       <div class="header">
-        <h1 data-i18n="history.title">📋 Meeting History</h1>
+        <h1 data-i18n="history.title">Meeting History</h1>
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
           <select id="history-lang-select" class="btn btn-secondary" style="padding:6px 10px;font-size:0.8rem;cursor:pointer" onchange="onLangChange(this.value)">
           </select>
           <span class="user" id="user-email"></span>
-          <a id="team-link" class="btn btn-secondary" href="/team.html" style="display:none;color:#f59e0b;border-color:rgba(245,158,11,.3)" data-i18n="history.teamAdmin">👥 Team admin</a>
+          <a id="team-link" class="btn btn-secondary" href="/team.html" style="display:none;color:#f59e0b;border-color:rgba(245,158,11,.3)" data-i18n="history.teamAdmin">Team admin</a>
           <a class="btn btn-secondary" href="/" data-i18n="history.backToAddon">← Back to add-on</a>
           <button class="btn btn-secondary" onclick="signOut()" data-i18n="btn.signOut">Sign out</button>
         </div>
@@ -196,7 +196,7 @@
         <!-- Auto-Capture Pro Banner for Free Users -->
         <div id="auto-capture-banner" style="display:none;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
           <div style="font-size:.85rem;color:#e6edf3;line-height:1.45" data-i18n="history.autoCaptureBanner">
-            ⚡ <strong>Hands-Free Auto-Capture</strong>: Pro automatically records and exports every Google Meet to Sheets in the background — even if you close the side-panel.
+            <strong>Hands-Free Auto-Capture</strong>: Pro automatically records and exports every Google Meet to Sheets in the background — even if you close the side-panel.
           </div>
           <button class="btn" style="background:#4ade80;color:#0d1117;padding:6px 14px;font-size:.8rem;white-space:nowrap" onclick="upgradeFromHistory(this)" data-i18n="history.upgradePro">Upgrade to Pro ($9.99)</button>
         </div>
@@ -440,7 +440,7 @@
       const toggle = document.getElementById('series-pro-interval');
       if (!box || !status?.individual || !status?.billingConfigured) { if (box) box.style.display = 'none'; return; }
       if (status.plan === 'pro') {
-        text.textContent = t('history.seriesProActive', 'Pro ✓ — cumulative class attendance reports are added to every export.');
+        text.textContent = t('history.seriesProActive', 'Pro — cumulative class attendance reports are added to every export.');
         btn.textContent = t('history.manageBilling', 'Manage billing');
         btn.dataset.mode = 'portal';
         if (toggle) toggle.style.display = 'none';
@@ -561,7 +561,7 @@
           <td>${esc(m.title)}<div class="muted" style="font-size:.72rem;margin-top:2px">${esc((m.presentNames || []).slice(0, 4).join(', '))}${m.presentNames && m.presentNames.length > 4 ? ` +${m.presentNames.length - 4} more` : ''}</div></td>
           <td class="right">${m.participantCount || 0}</td>
           <td class="right nowrap">${fmtDuration(m.durationMs)}</td>
-          <td class="right nowrap">${m.conferenceId ? `<a href="#" onclick="downloadMeetingArtifact('${esc(m.conferenceId)}','report');return false" title="Attendance report PDF" style="color:var(--accent);text-decoration:none">PDF</a> <a href="#" onclick="downloadMeetingArtifact('${esc(m.conferenceId)}','certificates');return false" title="Per-attendee certificates (Pro)" style="color:var(--accent);text-decoration:none;margin-left:8px">🎓</a>` : '<span class="muted">—</span>'}</td>
+          <td class="right nowrap">${m.conferenceId ? `<a href="#" onclick="downloadMeetingArtifact('${esc(m.conferenceId)}','report');return false" title="Attendance report PDF" style="color:var(--accent);text-decoration:none">PDF</a> <a href="#" onclick="downloadMeetingArtifact('${esc(m.conferenceId)}','certificates');return false" title="Per-attendee certificates (Pro)" style="color:var(--accent);text-decoration:none;margin-left:8px">Certs</a>` : '<span class="muted">—</span>'}</td>
         </tr>
       `).join('');
     }
@@ -694,14 +694,14 @@
         // Prefer clipboard API; fall back to a prompt() so the link is never lost.
         try {
           await navigator.clipboard.writeText(url);
-          btn.textContent = '✓ Copied';
+          btn.textContent = 'Copied';
         } catch {
           window.prompt('Share this link:', url);
-          btn.textContent = '✓ Link';
+          btn.textContent = 'Link';
         }
         setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2500);
       } catch (e) {
-        btn.textContent = '⚠ Error';
+        btn.textContent = 'Error';
         setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2500);
       }
     }

@@ -480,6 +480,7 @@
       color: #6e7681;
     }
   </style>
+  <script src="js/strings.js"></script>
 </head>
 <body>
 
@@ -495,6 +496,7 @@
         <a href="pricing.html" class="active">Pricing</a>
         <a href="faq.html">Help Center &amp; FAQ</a>
         <a href="support.html">Support</a>
+        <select id="pricing-lang-select" class="nav-links-select" style="background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:20px;padding:6px 12px;font-size:0.82rem;font-family:inherit;cursor:pointer" onchange="onPricingLangChange(this.value)"></select>
         <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" target="_blank" rel="noopener" class="nav-cta">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
           Install Free
@@ -508,10 +510,10 @@
     
     <div class="hero-section">
       <div class="deal-badge">
-        <span>✨ Limited Time Launch Deal · 50% Off Lifetime Access</span>
+        <span data-i18n="pricing.dealBadge">Limited Time Launch Deal · 50% Off Lifetime Access</span>
       </div>
-      <h1>Simple, Transparent Pricing</h1>
-      <p class="hero-sub">Free to start. Choose a lifetime pass or school domain license. No complicated contracts or hidden fees.</p>
+      <h1 data-i18n="pricing.heroTitle">Simple, Transparent Pricing</h1>
+      <p class="hero-sub" data-i18n="pricing.heroSub">Free to start. Choose a lifetime pass or school domain license. No complicated contracts or hidden fees.</p>
     </div>
 
     <!-- 3 Tier Cards -->
@@ -520,97 +522,97 @@
       <!-- Plan 1: Free -->
       <div class="plan-card">
         <div class="card-top">
-          <div class="plan-name">Free</div>
-          <div class="plan-description">Essential attendance tracking for individual teachers, tutors, and casual meetings.</div>
+          <div class="plan-name" data-i18n="pricing.planFreeName">Free</div>
+          <div class="plan-description" data-i18n="pricing.planFreeDesc">Essential attendance tracking for individual teachers, tutors, and casual meetings.</div>
           <div class="price-wrap">
             <span class="price-num">$0</span>
-            <span class="price-period">/ forever</span>
+            <span class="price-period" data-i18n="pricing.planFreePeriod">/ forever</span>
           </div>
-          <div class="price-note">No credit card required</div>
+          <div class="price-note" data-i18n="pricing.planFreeNote">No credit card required</div>
         </div>
 
         <ul class="plan-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Real-time attendance roster in Google Meet</span>
+            <span data-i18n="pricing.featureRoster">Real-time attendance roster in Google Meet</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Up to <strong>3 meeting exports</strong> per month</span>
+            <span data-i18n="pricing.feature3Exports">Up to 3 meeting exports per month</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Join, leave, duration &amp; reconnection logs</span>
+            <span data-i18n="pricing.featureLogs">Join, leave, duration & reconnection logs</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Works on personal @gmail.com &amp; Workspace</span>
+            <span data-i18n="pricing.featureGmailWorkspace">Works on personal @gmail.com & Workspace</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Direct export to Google Sheets in Drive</span>
+            <span data-i18n="pricing.featureSheets">Direct export to Google Sheets in Drive</span>
           </li>
         </ul>
 
         <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" target="_blank" rel="noopener" class="btn-plan btn-plan-secondary">
-          Install Free Add-on
+          <span data-i18n="pricing.btnInstallFree">Install Free Add-on</span>
         </a>
       </div>
 
       <!-- Plan 2: Educator Annual Pass -->
       <div class="plan-card">
         <div class="card-top">
-          <div class="plan-name">Educator Annual Pass</div>
-          <div class="plan-description">Affordable full power designed specifically for teachers, tutors, and solo educators.</div>
+          <div class="plan-name" data-i18n="pricing.planEduName">Educator Annual Pass</div>
+          <div class="plan-description" data-i18n="pricing.planEduDesc">Affordable full power designed specifically for teachers, tutors, and solo educators.</div>
           <div class="price-wrap">
             <span class="price-was">$9.99</span>
             <span class="price-num">$4.99</span>
-            <span class="price-period">/ year</span>
+            <span class="price-period" data-i18n="pricing.planEduPeriod">/ year</span>
           </div>
-          <div class="price-note">Billed annually · Cancel anytime · &lt; 42¢/mo</div>
+          <div class="price-note" data-i18n="pricing.planEduNote">Billed annually · Cancel anytime · &lt; 42¢/mo</div>
         </div>
 
         <ul class="plan-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span><strong>Unlimited</strong> Google Sheets exports</span>
+            <span data-i18n="pricing.featureUnlimitedExports">Unlimited Google Sheets exports</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span><strong>Hands-Free Auto-Capture</strong> when meeting ends</span>
+            <span data-i18n="pricing.featureAutoCapture">Hands-Free Auto-Capture when meeting ends</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Cumulative <strong>Class Summary</strong> multi-session reports</span>
+            <span data-i18n="pricing.featureClassSummary">Cumulative Class Summary multi-session reports</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Attendee certificates &amp; PDF generation</span>
+            <span data-i18n="pricing.featureCerts">Attendee certificates & PDF generation</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Priority email support</span>
+            <span data-i18n="pricing.featurePrioritySupport">Priority email support</span>
           </li>
         </ul>
 
         <button type="button" id="btn-buy-educator" class="btn-plan btn-plan-secondary" onclick="startPricingCheckout('educator', this)">
-          <span>Get Educator Pass — $4.99/yr</span>
+          <span data-i18n="pricing.btnGetEdu">Get Educator Pass — $4.99/yr</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
 
       <!-- Plan 3: Individual Lifetime Pro (Featured) -->
       <div class="plan-card featured">
-        <div class="card-ribbon">⭐ Best Value · Most Popular</div>
+        <div class="card-ribbon" data-i18n="pricing.ribbonFeatured">Best Value · Most Popular</div>
         <div class="card-top">
-          <div class="plan-name">Individual Lifetime Pass</div>
-          <div class="plan-description">Full unrestricted power for school teachers, university professors, tutors, and team leads.</div>
+          <div class="plan-name" data-i18n="pricing.planLifetimeName">Individual Lifetime Pass</div>
+          <div class="plan-description" data-i18n="pricing.planLifetimeDesc">Full unrestricted power for school teachers, university professors, tutors, and team leads.</div>
           <div class="price-wrap">
             <span class="price-was">$19.99</span>
             <span class="price-num">$9.99</span>
-            <span class="price-period">one-time</span>
+            <span class="price-period" data-i18n="pricing.planLifetimePeriod">one-time</span>
           </div>
-          <div class="price-note">Pay once · keep forever · 50% launch discount</div>
+          <div class="price-note" data-i18n="pricing.planLifetimeNote">Pay once · keep forever · 50% launch discount</div>
         </div>
 
         <ul class="plan-features">
@@ -632,16 +634,16 @@
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Cards, Google Pay, Apple Pay, Pix &amp; local methods</span>
+            <span data-i18n="pricing.featurePayMethods">Cards, Google Pay, Apple Pay, Pix & local methods</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Priority email support</span>
+            <span data-i18n="pricing.featurePrioritySupport">Priority email support</span>
           </li>
         </ul>
 
         <button type="button" id="btn-buy-lifetime" class="btn-plan btn-plan-primary" onclick="startPricingCheckout('lifetime', this)">
-          <span>Get Lifetime Access — $9.99</span>
+          <span data-i18n="pricing.btnGetLifetime">Get Lifetime Access — $9.99</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -649,40 +651,40 @@
       <!-- Plan 3: Domain Pro (Whole School / Org) -->
       <div class="plan-card">
         <div class="card-top">
-          <div class="plan-name">Lifetime Domain Pro</div>
-          <div class="plan-description">Org-wide coverage for entire Google Workspace domains, schools, and companies.</div>
+          <div class="plan-name" data-i18n="pricing.planDomainName">Lifetime Domain Pro</div>
+          <div class="plan-description" data-i18n="pricing.planDomainDesc">Org-wide coverage for entire Google Workspace domains, schools, and companies.</div>
           <div class="price-wrap">
             <span class="price-num">$19.99</span>
             <span class="price-period">one-time</span>
           </div>
-          <div class="price-note">Covers all users on your Google Workspace domain</div>
+          <div class="price-note" data-i18n="pricing.planDomainNote">Covers all users on your Google Workspace domain</div>
         </div>
 
         <ul class="plan-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span><strong>Everything in Individual Pro</strong></span>
+            <span data-i18n="pricing.featureEverythingIndividual">Everything in Individual Pro</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span><strong>Lifetime access</strong> — pay once, keep forever</span>
+            <span data-i18n="pricing.featureLifetimeKeep">Lifetime access — pay once, keep forever</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>One license covers <strong>unlimited teachers &amp; staff</strong></span>
+            <span data-i18n="pricing.featureUnlimitedTeachers">One license covers unlimited teachers & staff</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Org-wide team dashboard (team.html)</span>
+            <span data-i18n="pricing.featureTeamDashboard">Org-wide team dashboard (team.html)</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Domain-wide delegation support for external guests</span>
+            <span data-i18n="pricing.featureDomainDelegation">Domain-wide delegation support for external guests</span>
           </li>
         </ul>
 
         <button type="button" id="btn-buy-team" class="btn-plan btn-plan-secondary" onclick="startPricingCheckout('team', this)">
-          <span>Upgrade Domain — $19.99</span>
+          <span data-i18n="pricing.btnUpgradeDomain">Upgrade Domain — $19.99</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -693,15 +695,15 @@
     <div class="trust-bar">
       <div class="trust-item">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-        <span><strong>256-bit Encrypted</strong> checkout via Stripe</span>
+        <span data-i18n="pricing.trustStripe">256-bit Encrypted checkout via Stripe</span>
       </div>
       <div class="trust-item">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:#58a6ff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        <span><strong>Instant Activation</strong> for your account</span>
+        <span data-i18n="pricing.trustInstant">Instant Activation for your account</span>
       </div>
       <div class="trust-item">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:#fdd663"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        <span><strong>30-Day</strong> money-back guarantee</span>
+        <span data-i18n="pricing.trustGuarantee">30-Day money-back guarantee</span>
       </div>
     </div>
 
@@ -732,6 +734,31 @@
   </footer>
 
   <script>
+    
+    function initPricingI18n() {
+      if (typeof AttStrings === 'undefined') return;
+      var cur = AttStrings.getLocale();
+      document.documentElement.dir = (cur === 'ar' || cur === 'he' || cur === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = cur;
+      var sel = document.getElementById('pricing-lang-select');
+      if (sel) {
+        sel.innerHTML = AttStrings.LOCALES.map(function(l) {
+          return '<option value="' + l.code + '" ' + (l.code === cur ? 'selected' : '') + '>' + l.flag + ' ' + l.label + '</option>';
+        }).join('');
+      }
+      AttStrings.applyTranslations();
+    }
+
+    function onPricingLangChange(code) {
+      if (typeof AttStrings === 'undefined') return;
+      AttStrings.setLocale(code, true);
+      document.documentElement.dir = (code === 'ar' || code === 'he' || code === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
+      AttStrings.applyTranslations();
+    }
+
+    window.addEventListener('DOMContentLoaded', initPricingI18n);
+
     const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8080/api'
       : 'https://attendance-tracker-backend-829771833968.us-central1.run.app/api';

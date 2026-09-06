@@ -732,7 +732,7 @@ async function sendWelcomeEmail({ to, displayName }) {
     `2. Click the Activities icon (shapes in the bottom-right corner) and open Attendance Tracker.`,
     `3. Click "Start" — join times, leave times, and stay durations update live. When you're ready, click "Sheet" to export to Google Sheets in one click.`,
     '',
-    `Tip: If you're testing right now in an empty call, click "🧪 Testing solo? Load 10 demo students" inside the side panel to see how it works before your next real meeting.`,
+    `Tip: If you're testing right now in an empty call, click "Testing solo? Load 10 demo students" inside the side panel to see how it works before your next real meeting.`,
     '',
     `Watch the 30-second video demo: https://youtu.be/WqX-LxjjY04`,
     '',
