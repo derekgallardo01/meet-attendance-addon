@@ -1326,15 +1326,15 @@
   <div class="controls">
     <button class="btn-primary" id="btn-start" onclick="startTracking()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      Start
+      <span id="btn-start-label" data-i18n="btn.start">Start</span>
     </button>
     <button class="btn-secondary" id="btn-refresh" onclick="manualSync()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Sync
+      <span id="btn-refresh-label" data-i18n="btn.sync">Sync</span>
     </button>
     <button class="btn-secondary" id="btn-sheets" onclick="saveToSheets()" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Sheet
+      <span id="btn-sheets-label" data-i18n="btn.sheet">Sheet</span>
     </button>
   </div>
 
@@ -1366,19 +1366,19 @@
   <!-- ── Summary ── -->
   <div class="summary-row">
     <div class="chip">
-      <div class="chip-label">Present</div>
+      <div class="chip-label" data-i18n="filter.present">Present</div>
       <div class="chip-value green" id="count-present">—</div>
     </div>
     <div class="chip">
-      <div class="chip-label">Left</div>
+      <div class="chip-label" data-i18n="attendee.left">Left</div>
       <div class="chip-value red" id="count-left">—</div>
     </div>
     <div class="chip">
-      <div class="chip-label">Total</div>
+      <div class="chip-label" data-i18n="filter.all">Total</div>
       <div class="chip-value blue" id="count-total">—</div>
     </div>
     <div class="chip">
-      <div class="chip-label">Duration</div>
+      <div class="chip-label" data-i18n="attendee.duration">Duration</div>
       <div class="chip-value" id="meeting-duration">—</div>
     </div>
   </div>
@@ -1414,10 +1414,10 @@
   <!-- ── Tabs (visible only for scheduled events) ── -->
   <div class="tab-bar" id="tab-bar">
     <button class="tab-btn active" id="tab-participants" onclick="switchTab('participants')">
-      Participants <span class="tab-badge" id="tab-count-participants">0</span>
+      <span data-i18n="nav.people">Participants</span> <span class="tab-badge" id="tab-count-participants">0</span>
     </button>
     <button class="tab-btn" id="tab-invited" onclick="switchTab('invited')">
-      Invited <span class="tab-badge" id="tab-count-invited">0</span>
+      <span data-i18n="attendee.noShows">Invited</span> <span class="tab-badge" id="tab-count-invited">0</span>
     </button>
   </div>
 
@@ -2305,7 +2305,7 @@ function startTracking() {
   document.getElementById('btn-refresh').disabled = false;
   document.getElementById('btn-sheets').disabled  = false;
 
-  setStatus('active', 'Tracking attendance…');
+  setStatus('active', t('status.tracking', 'Tracking attendance…'));
   showSearchBar();
   startDurationTimer();
   fetchCalendarAttendees(); // detect scheduled event + show tabs
@@ -2327,7 +2327,7 @@ function stopTracking() {
   clearTimeout(state.refreshTimer);
   clearInterval(state.countdownTimer);
   clearInterval(state.durationTimer);
-  setStatus('idle', 'Tracking stopped');
+  setStatus('idle', t('status.stopped', 'Tracking stopped'));
   // Auto-export when the user opted in. Only fires once per meeting and only
   // if there's something to export, so a misclicked Stop isn't punished.
   if (localStorage.getItem('autoExportOnEnd') === '1' && state.participants.size > 0 && !state._autoExportFired) {
@@ -2616,21 +2616,22 @@ function renderList() {
       const joinStr  = p.joinTime ? fmtTime(p.joinTime) : '—';
       const totalMs = AttUtils.participantTotalMs(p);
       const durStr = totalMs > 0 ? fmtDurMs(totalMs) : (p.joinTime ? '< 1m' : '');
-      const leaveStr = (!p.present && p.leaveTime) ? ' · Left ' + fmtTime(p.leaveTime) : '';
+      const leaveStr = (!p.present && p.leaveTime) ? ' · ' + t('attendee.left', 'Left') + ' ' + fmtTime(p.leaveTime) : '';
       const emailStr = p.email ? `<div class="participant-meta">${escHtml(p.email)}</div>` : '';
       const key = participantKey(p).replace(/'/g, "\\'");
       const color = avatarColor(p.displayName);
       const lateMin = latenessMin(p);
-      const lateChip = lateMin > 0 ? `<span class="late-chip" title="Joined ${lateMin} min after meeting start">+${lateMin}m late</span>` : '';
+      const lateChip = lateMin > 0 ? `<span class="late-chip" title="Joined ${lateMin} min after meeting start">+${lateMin}m ${t('attendee.late', 'late')}</span>` : '';
+      const badgeText = p.present ? t('attendee.present', 'Present') : t('attendee.left', 'Left');
       return `
         <div class="participant-card ${p.present ? '' : 'left'}" onclick="openProfileModal('${key}')" style="cursor:pointer">
           <div class="avatar" style="background:${color};color:#fff">${initials}</div>
           <div>
             <div class="participant-name">${escHtml(p.displayName)}${lateChip}</div>
             ${emailStr}
-            <div class="participant-meta">Joined ${joinStr}${durStr ? ' · ' + durStr : ''}${leaveStr}</div>
+            <div class="participant-meta">${t('attendee.joinedAt', 'Joined')} ${joinStr}${durStr ? ' · ' + durStr : ''}${leaveStr}</div>
           </div>
-          <span class="badge ${p.present ? 'present' : 'left'}">${p.present ? 'Present' : 'Left'}</span>
+          <span class="badge ${p.present ? 'present' : 'left'}">${badgeText}</span>
         </div>`;
     }).join('');
   }
@@ -3576,9 +3577,66 @@ function downloadCertificates() {
 /* ═══════════════════════════════════════════════════════════════
    SETTINGS MODAL — auto-export toggle + Slack webhook config
 ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   i18n UI HELPERS
+═══════════════════════════════════════════════════════════════ */
+function updateUiLanguage() {
+  if (!window.AttStrings) return;
+  const curLocale = AttStrings.getLocale();
+  const isRtl = (curLocale === 'he' || curLocale === 'ar' || curLocale === 'ur');
+  const addonEl = document.getElementById('addon-ui');
+  if (addonEl) addonEl.dir = isRtl ? 'rtl' : 'ltr';
+
+  AttStrings.applyTranslations(document.body);
+
+  const btnStartLabel = document.getElementById('btn-start-label');
+  if (btnStartLabel) {
+    btnStartLabel.textContent = state.tracking ? t('btn.stop', 'Stop') : t('btn.start', 'Start');
+  }
+  const btnRefreshLabel = document.getElementById('btn-refresh-label');
+  if (btnRefreshLabel) btnRefreshLabel.textContent = t('btn.sync', 'Sync');
+  const btnSheetsLabel = document.getElementById('btn-sheets-label');
+  if (btnSheetsLabel) btnSheetsLabel.textContent = t('btn.sheet', 'Sheet');
+
+  const filterSel = document.getElementById('filter-select');
+  if (filterSel && filterSel.options.length >= 3) {
+    filterSel.options[0].textContent = `${t('btn.filter', 'Filter')}: ${t('filter.all', 'All')}`;
+    filterSel.options[1].textContent = t('filter.present', 'Present');
+    filterSel.options[2].textContent = t('attendee.left', 'Left');
+  }
+
+  if (state.participants && state.participants.size > 0) {
+    renderList();
+  }
+
+  const langSel = document.getElementById('settings-lang-select');
+  if (langSel) langSel.value = curLocale;
+}
+
+function changeLanguage(lang) {
+  if (window.AttStrings) {
+    AttStrings.setLocale(lang, true);
+    updateUiLanguage();
+    const matched = AttStrings.LOCALES.find(l => l.code === lang);
+    toast(`${matched ? matched.flag + ' ' + matched.label : lang}`);
+  }
+}
+
+function populateLanguageSelect() {
+  const langSel = document.getElementById('settings-lang-select');
+  if (!langSel || !window.AttStrings) return;
+  const locales = AttStrings.getAvailableLocales();
+  langSel.innerHTML = locales.map(l => 
+    `<option value="${l.code}">${l.flag} ${l.label}</option>`
+  ).join('');
+  langSel.value = AttStrings.getLocale();
+}
+
 async function openSettingsModal() {
   const modal = document.getElementById('settings-modal');
   if (!modal) return;
+  populateLanguageSelect();
   modal.style.display = 'flex';
   try { logUserEvent('settings_opened', {}); } catch {}
 
@@ -4286,7 +4344,9 @@ function latenessMin(p) {
    BOOT
 ═══════════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  setStatus('loading', 'Connecting to Meet…');
+  populateLanguageSelect();
+  updateUiLanguage();
+  setStatus('loading', t('status.initializing', 'Connecting to Meet…'));
   initSDK();
 });
 </script>
@@ -4357,6 +4417,25 @@ window.addEventListener('DOMContentLoaded', () => {
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
+      </div>
+
+      <!-- Language Selector Group -->
+      <div class="settings-group">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span data-i18n="nav.settings">Language</span>
+            </div>
+            <div class="settings-row-sub">Choose your display language</div>
+          </div>
+          <select id="settings-lang-select" onchange="changeLanguage(this.value)" style="background:#0d1117;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:6px 10px;font-size:.8rem;cursor:pointer">
+          </select>
+        </div>
       </div>
 
       <!-- Automations & Notifications Group -->
