@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
+  <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Meet Attendance Tracker for Teachers in the Philippines (DepEd &amp; Universities) â€” Attendance Tracker</title>
+  <meta name="description" content="Free Google Meet attendance tracker for Philippine public and private school teachers, DepEd accounts, and university professors (.edu.ph). Automatic roll call, late flags, and Google Sheets export without Education Plus." />
+  <link rel="canonical" href="https://attendancetracker.dev/google-meet-attendance-philippines-teachers.html" />
+  <meta property="og:title" content="Google Meet Attendance Tracker for Teachers in the Philippines (DepEd &amp; Universities)" />
+  <meta property="og:description" content="Automatic roll call, late student flags, and one-click Google Sheets export for DepEd and Philippine college teachers. No Education Plus needed." />
+  <meta property="og:image" content="https://attendancetracker.dev/icons/icon-128.png" />
+  <meta property="og:url" content="https://attendancetracker.dev/google-meet-attendance-philippines-teachers.html" />
+  <meta property="og:type" content="article" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Google Meet Attendance Tracker for Philippine Teachers and Universities (DepEd & CHED)",
+    "description": "How public and private school teachers in the Philippines track attendance, late arrivals, and generate Google Sheets reports without an Education Plus license.",
+    "author": {
+      "@type": "Organization",
+      "name": "Attendance Tracker"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Attendance Tracker",
+      "url": "https://attendancetracker.dev/"
+    }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #4ade80; --blue: #58a6ff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 40px 20px; }
+    .container { max-width: 760px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .brand a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 1.05rem; }
+    .page-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: #4ade80; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+    h1 { font-size: 2.1rem; line-height: 1.25; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .lead { color: var(--muted); font-size: 1.08rem; margin-bottom: 28px; line-height: 1.6; }
+    h2 { font-size: 1.4rem; margin-top: 40px; margin-bottom: 16px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3 { font-size: 1.1rem; margin-top: 24px; margin-bottom: 10px; color: var(--text); }
+    p { margin-bottom: 16px; color: #c9d1d9; font-size: 0.95rem; }
+    ul, ol { padding-left: 22px; margin-bottom: 20px; color: #c9d1d9; font-size: 0.95rem; }
+    li { margin-bottom: 8px; line-height: 1.5; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .callout { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 18px 20px; margin: 26px 0; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 24px 0; }
+    .feature-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .feature-box strong { display: block; color: var(--text); font-size: 0.95rem; margin-bottom: 6px; }
+    .feature-box p { color: var(--muted); font-size: 0.85rem; margin: 0; line-height: 1.45; }
+    .cta { background: linear-gradient(135deg, rgba(74,222,128,.1), rgba(88,166,255,.1)); border: 1px solid rgba(74,222,128,.3); border-radius: 16px; padding: 32px 24px; text-align: center; margin: 44px 0; }
+    .cta h3 { font-size: 1.3rem; margin-top: 0; margin-bottom: 8px; color: #fff; }
+    .cta p { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
+    .btn { display: inline-block; background: #34A853; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 24px; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(52,168,83,.4); transition: transform 0.15s ease; }
+    .btn:hover { transform: translateY(-1px); text-decoration: none; }
+    .step-number { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: rgba(88,166,255,.2); color: var(--blue); border-radius: 50%; font-size: 0.78rem; font-weight: 700; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">
+      <img src="icons/icon-96.png" alt="Attendance Tracker" />
+      <a href="/">Attendance Tracker</a>
+    </div>
+
+    <div class="page-badge">ðŸ‡µðŸ‡­ Philippine Educators &amp; Universities</div>
+    <h1>Google Meet Attendance Tracker for Teachers in the Philippines</h1>
+    <p class="lead">Taking manual roll call for 40 to 90 students in Google Meet eats up valuable lecture time. Here is how Filipino teachers, DepEd faculty, and university professors take automated attendance and export directly to Google Sheets â€” without an expensive Google Workspace for Education Plus upgrade.</p>
+
+    <div class="callout">
+      <strong>Built for Philippine School Workspaces:</strong> Works with personal <code>@gmail.com</code> accounts, official DepEd accounts (<code>@deped.gov.ph</code> or regional divisions), and state/private university domains (<code>@*.edu.ph</code> including CEU, NEU, EVSU, UMak, BatStateU, UP, UST, DLSU, and more).
+    </div>
+
+    <h2>Why Google's Built-In Attendance Report Doesn't Show Up</h2>
+    <p>In the Philippines, most public schools under the Department of Education (DepEd) and state universities operate on <strong>Google Workspace for Education Fundamentals</strong> (the free tier provided to educational institutions).</p>
+    <p>Google restricts its native attendance tracking reports exclusively to the high-tier <strong>Education Plus</strong> license. For teachers with Fundamentals accounts, Google Meet does not send any attendance email or spreadsheet after your call ends.</p>
+    <p><strong>Attendance Tracker</strong> operates directly as a certified Google Workspace Marketplace side-panel add-on. Because it uses Google Meet's public add-on API, it functions on <em>any</em> Workspace edition â€” including free Fundamentals accounts and personal Gmail accounts.</p>
+
+    <h2>Key Features for Online Classes &amp; Synchronous Lectures</h2>
+    
+    <div class="feature-grid">
+      <div class="feature-box">
+        <strong>ðŸ“‹ Instant Auto Roll-Call</strong>
+        <p>No need to shout names or ask students to type "Present" in the chat box. Every joining student is logged automatically in real time.</p>
+      </div>
+      <div class="feature-box">
+        <strong>â° Late Arrival Flags</strong>
+        <p>Students who join 5+ minutes after class starts automatically get flagged with a clear late chip (e.g. <code>+12m late</code>) next to their name.</p>
+      </div>
+      <div class="feature-box">
+        <strong>â±ï¸ Total Duration &amp; Disconnections</strong>
+        <p>Tracks actual time spent in class. If student Wi-Fi cuts out and they reconnect, their total active minutes are merged into one clean record.</p>
+      </div>
+      <div class="feature-box">
+        <strong>ðŸ“Š 1-Click Google Sheets Export</strong>
+        <p>Exports clean spreadsheets directly into your Google Drive folder ("Meet Attendance Tracker"), formatted with student names, emails, and durations.</p>
+      </div>
+      <div class="feature-box">
+        <strong>âš¡ Hands-Free Auto-Export</strong>
+        <p>Never forget to save attendance. Turn on auto-export in Settings, and the spreadsheet is saved and emailed to you the moment your class ends.</p>
+      </div>
+      <div class="feature-box">
+        <strong>ðŸŽ“ Class Attendance Certificates</strong>
+        <p>Generate professional attendance verification certificates in PDF for webinars, seminars, workshops, and required training modules.</p>
+      </div>
+    </div>
+
+    <h2>How to Use It for Your Next Class</h2>
+    <ol>
+      <li><strong>Install the Add-on:</strong> Open the <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=seo_ph_teachers" target="_blank" rel="noopener">Attendance Tracker Google Marketplace page</a> and click <strong>Install</strong>.</li>
+      <li><strong>Open Google Meet:</strong> Start your scheduled class or meeting link.</li>
+      <li><strong>Open the Side Panel:</strong> Click the <em>Activities / Add-ons</em> icon (next to the chat icon in Google Meet) and select <strong>Attendance Tracker</strong>.</li>
+      <li><strong>Conduct Your Class:</strong> The roster updates automatically as students join, leave, or speak.</li>
+      <li><strong>Save Your Sheet:</strong> Click <strong>Save to Sheets</strong> or enable auto-export so it automatically saves to your Google Drive when you hang up.</li>
+    </ol>
+
+    <h2>Frequently Asked Questions for Philippine Teachers</h2>
+
+    <h3>Does this work if students join using personal Gmail addresses?</h3>
+    <p>Yes. Regardless of whether students join from their official school domain or their personal Gmail account, Attendance Tracker captures their Google display name and email address accurately in the attendance roster.</p>
+
+    <h3>Can I track large lecture classes of 50 to 100+ students?</h3>
+    <p>Yes. Attendance Tracker is engineered to handle large college lecture halls and webinar sessions with 100+ attendees smoothly with zero browser slowdown.</p>
+
+    <h3>Is student data kept private and secure?</h3>
+    <p>Yes. Attendance Tracker does not sell data, does not show third-party ads, and never reads the contents of your meeting, camera feed, or microphone. Spreadsheets are saved directly inside your personal Google Drive account.</p>
+
+    <h3>Is there an educator discount for unlimited exports?</h3>
+    <p>Yes! Teachers can take advantage of the <strong>Educator Pass</strong> for just $4.99/year or a one-time <strong>Lifetime Pass</strong> for $9.99 with no recurring fees. Both options provide unlimited class exports, automated background capture, and student certificates.</p>
+
+    <div class="cta">
+      <h3>Ready to automate your class attendance?</h3>
+      <p>Save 10â€“15 minutes every single class. Free install on Google Workspace Marketplace.</p>
+      <a class="btn" href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=seo_ph_teachers" target="_blank" rel="noopener">Install Free from Google Marketplace â†’</a>
+    </div>
+
+    <div class="footer-hub" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--muted); line-height: 1.8;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; text-align: left; margin-bottom: 24px;">
+        <div>
+          <strong style="color: var(--text); display: block; margin-bottom: 6px;">Education</strong>
+          <a href="attendance-tracker-for-teachers.html" style="color: var(--muted); text-decoration: none; display: block;">For K-12 Teachers</a>
+          <a href="google-meet-attendance-philippines-teachers.html" style="color: var(--accent); text-decoration: none; display: block; font-weight:600;">Philippine Teachers &amp; DepEd</a>
+          <a href="google-meet-attendance-google-classroom.html" style="color: var(--muted); text-decoration: none; display: block;">Google Classroom</a>
+          <a href="google-meet-attendance-for-universities.html" style="color: var(--muted); text-decoration: none; display: block;">Universities &amp; Colleges</a>
+          <a href="google-meet-attendance-for-tutors.html" style="color: var(--muted); text-decoration: none; display: block;">Tutors &amp; Bootcamps</a>
+        </div>
+        <div>
+          <strong style="color: var(--text); display: block; margin-bottom: 6px;">Teams &amp; Business</strong>
+          <a href="google-meet-attendance-for-remote-teams.html" style="color: var(--muted); text-decoration: none; display: block;">Remote Teams &amp; Standups</a>
+          <a href="how-to-send-google-meet-attendance-to-slack.html" style="color: var(--muted); text-decoration: none; display: block;">Slack Integration</a>
+          <a href="track-attendance-for-webinars-and-training-google-meet.html" style="color: var(--muted); text-decoration: none; display: block;">Webinars &amp; Training</a>
+          <a href="google-meet-attendance-for-legal-depositions.html" style="color: var(--muted); text-decoration: none; display: block;">Legal &amp; Arbitrations</a>
+          <a href="google-meet-attendance-for-job-interviews.html" style="color: var(--muted); text-decoration: none; display: block;">Recruiting &amp; Interviews</a>
+        </div>
+        <div>
+          <strong style="color: var(--text); display: block; margin-bottom: 6px;">Specialized Verticals</strong>
+          <a href="google-meet-attendance-for-cpe-and-cle-credits.html" style="color: var(--muted); text-decoration: none; display: block;">CPE &amp; CLE Credits</a>
+          <a href="google-meet-clinical-supervision-and-therapy.html" style="color: var(--muted); text-decoration: none; display: block;">Clinical Supervision</a>
+          <a href="google-meet-quorum-and-board-meetings.html" style="color: var(--muted); text-decoration: none; display: block;">Board Quorum Tracking</a>
+          <a href="google-meet-attendance-for-churches.html" style="color: var(--muted); text-decoration: none; display: block;">Churches &amp; Ministries</a>
+          <a href="google-meet-attendance-for-volunteer-hours.html" style="color: var(--muted); text-decoration: none; display: block;">Volunteer Hours</a>
+          <a href="google-meet-attendance-for-fitness-and-yoga.html" style="color: var(--muted); text-decoration: none; display: block;">Fitness &amp; Yoga</a>
+        </div>
+      </div>
+      <div style="text-align: center; font-size: 0.78rem; color: #6e7681; margin-top: 16px;">
+        &copy; 2026 Kinetic Helix LLC. Attendance Tracker for Google Meet&trade;. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    try {
+      var params = new URLSearchParams(location.search);
+      var utmSource = params.get('utm_source'), utmMedium = params.get('utm_medium'), utmCampaign = params.get('utm_campaign');
+      var ref = params.get('ref'), referrer = document.referrer || null;
+      var ACQ_KEY = 'attendanceTrackerAcq';
+      if (!localStorage.getItem(ACQ_KEY)) {
+        var payload = { utmSource: utmSource, utmMedium: utmMedium, utmCampaign: utmCampaign, ref: ref, referrer: referrer, landingUrl: location.href, capturedAt: Date.now() };
+        localStorage.setItem(ACQ_KEY, JSON.stringify(payload));
+        var cs = utmSource || (ref ? 'referral' : null) || (referrer ? new URL(referrer).hostname : null) || 'direct';
+        document.cookie = 'att_first_touch=' + encodeURIComponent(JSON.stringify(Object.assign({}, payload, { computedSource: cs }))) + ';path=/;max-age=7776000;SameSite=Lax';
+      }
+    } catch (e) {}
+    var API = 'https://attendance-tracker-backend-829771833968.us-central1.run.app/api';
+    try {
+      var blob = new Blob([JSON.stringify({ path: location.pathname, referrer: document.referrer || null, viewportWidth: window.innerWidth || null, utmSource: params.get('utm_source'), utmMedium: params.get('utm_medium'), utmCampaign: params.get('utm_campaign') })], { type: 'application/json' });
+      if (navigator.sendBeacon) navigator.sendBeacon(API + '/public/pageview', blob);
+      else fetch(API + '/public/pageview', { method: 'POST', body: blob, keepalive: true });
+    } catch (e) {}
+  })();
+  </script>
+</body>
+</html>

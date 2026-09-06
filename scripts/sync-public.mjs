@@ -37,6 +37,7 @@ const MIRRORED = [
   'google-meet-attendance-for-volunteer-hours.html',
   'google-meet-attendance-google-classroom.html',
   'google-meet-attendance-on-ipad-and-mobile.html',
+  'google-meet-attendance-philippines-teachers.html',
   'google-meet-attendance-report-not-showing-up.html',
   'google-meet-clinical-supervision-and-therapy.html',
   'google-meet-quorum-and-board-meetings.html',

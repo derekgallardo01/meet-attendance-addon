@@ -2855,13 +2855,29 @@ function showUpgradeModal(reason) {
       note.style.display = 'none';
     }
   }
+  const email = (state.userEmail || '').toLowerCase();
+  const isEdu = /\.(edu|edu\.[a-z]{2}|ac\.[a-z]{2}|gov\.[a-z]{2}|k12\.[a-z]{2}\.us)$/i.test(email) ||
+                /@(.*\.)?(school|academy|college|university|deped|alokitohridoy)/i.test(email);
+  const dealPill = document.getElementById('upgrade-deal-pill');
+  if (dealPill) {
+    if (isEdu) {
+      dealPill.innerHTML = '<span>🎓 Verified Educator Deal · 50% Off Applied</span>';
+      dealPill.style.background = 'rgba(74,222,128,.14)';
+      dealPill.style.borderColor = 'rgba(74,222,128,.35)';
+      dealPill.style.color = '#4ade80';
+    } else {
+      dealPill.innerHTML = '<span>✨ Limited Time Launch Deal · 50% Off</span>';
+      dealPill.style.background = 'rgba(253,214,99,.12)';
+      dealPill.style.borderColor = 'rgba(253,214,99,.25)';
+      dealPill.style.color = '#fdd663';
+    }
+  }
   const upgradeReviewLink = document.getElementById('upgrade-review-link');
   if (upgradeReviewLink) {
-    const email = state.userEmail || '';
     upgradeReviewLink.href = `${state.backendUrl}/public/review-click?email=${encodeURIComponent(email)}&source=upgrade_modal`;
   }
   modal.style.display = 'flex';
-  try { logUserEvent('upgrade_modal_shown', { reason: reason || 'manual' }); } catch {}
+  try { logUserEvent('upgrade_modal_shown', { reason: reason || 'manual', isEdu }); } catch {}
 }
 
 function closeUpgradeModal() {
@@ -4454,7 +4470,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <button type="button" onclick="closeUpgradeModal()" aria-label="Close" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#9aa0a6;cursor:pointer;font-size:16px;line-height:1;padding:4px;border-radius:50%">✕</button>
 
       <!-- Top Deal Pill -->
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(253,214,99,.12);border:1px solid rgba(253,214,99,.25);color:#fdd663;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;margin-bottom:12px;letter-spacing:.02em">
+      <div id="upgrade-deal-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(253,214,99,.12);border:1px solid rgba(253,214,99,.25);color:#fdd663;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;margin-bottom:12px;letter-spacing:.02em">
         <span>✨ Limited Time Launch Deal · 50% Off</span>
       </div>
 
@@ -4501,10 +4517,13 @@ window.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>
 
-      <!-- Plan 2: Annual (Teacher / Individual) -->
-      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:14px">
+      <!-- Plan 2: Annual (Educator / Classroom Pass) -->
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(88,166,255,.2);border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-weight:600;font-size:.88rem;color:#e3e3e3">Annual Pass</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-weight:600;font-size:.88rem;color:#e3e3e3">Educator Annual Pass</span>
+            <span style="background:rgba(88,166,255,.15);color:#58a6ff;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:12px;letter-spacing:.04em;text-transform:uppercase">~$0.41/mo</span>
+          </div>
           <div style="text-align:right">
             <s style="color:#5f6368;font-size:.78rem;margin-right:4px;font-weight:400">$9.99</s>
             <span style="font-weight:700;font-size:1rem;color:#8ab4f8">$4.99</span>
@@ -4514,15 +4533,15 @@ window.addEventListener('DOMContentLoaded', () => {
         <div style="display:flex;flex-direction:column;gap:5px;font-size:.75rem;color:#9aa0a6;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:7px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8ab4f8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Unlimited Sheets exports &amp; auto-export</span>
+            <span>Unlimited classes &amp; automated Sheets export</span>
           </div>
           <div style="display:flex;align-items:center;gap:7px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8ab4f8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Student attendance certificates</span>
+            <span>Student attendance certificates &amp; multi-session reports</span>
           </div>
         </div>
-        <button type="button" id="btn-upgrade-individual" onclick="startUpgradeCheckout('individual', 'btn-upgrade-individual')" style="width:100%;background:rgba(255,255,255,.08);color:#e3e3e3;border:1px solid rgba(255,255,255,.14);padding:8px 14px;border-radius:20px;font-weight:500;font-size:.8rem;cursor:pointer;transition:all .15s ease">
-          Get Annual Pass — $4.99/yr
+        <button type="button" id="btn-upgrade-individual" onclick="startUpgradeCheckout('individual', 'btn-upgrade-individual')" style="width:100%;background:rgba(88,166,255,.14);border:1px solid rgba(88,166,255,.3);color:#79c0ff;padding:9px 14px;border-radius:20px;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s ease">
+          Get Educator Annual Pass — $4.99/yr
         </button>
       </div>
 
