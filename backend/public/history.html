@@ -135,6 +135,7 @@
   </style>
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="js/utils.js"></script>
+  <script src="js/strings.js"></script>
   <script src="js/api.js"></script>
   <script src="js/history.js"></script>
 </head>
@@ -142,93 +143,95 @@
   <div class="container">
     <!-- Login -->
     <div id="login-screen" class="login-screen">
-      <h2>Meeting History</h2>
-      <p>Sign in to browse every meeting you've tracked.</p>
-      <button class="btn btn-primary" onclick="signIn()">Sign in with Google</button>
+      <h2 data-i18n="history.title">Meeting History</h2>
+      <p data-i18n="history.loginPrompt">Sign in to browse every meeting you've tracked.</p>
+      <button class="btn btn-primary" onclick="signIn()" data-i18n="btn.signIn">Sign in with Google</button>
     </div>
 
     <!-- Loading -->
-    <div id="loading" style="display:none">Loading history…</div>
+    <div id="loading" style="display:none" data-i18n="history.loading">Loading history…</div>
 
     <!-- Dashboard -->
     <div id="dashboard">
       <div class="header">
-        <h1>📋 Meeting History</h1>
-        <div>
+        <h1 data-i18n="history.title">📋 Meeting History</h1>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+          <select id="history-lang-select" class="btn btn-secondary" style="padding:6px 10px;font-size:0.8rem;cursor:pointer" onchange="onLangChange(this.value)">
+          </select>
           <span class="user" id="user-email"></span>
-          <a id="team-link" class="btn btn-secondary" href="/team.html" style="margin-left:8px;display:none;color:#f59e0b;border-color:rgba(245,158,11,.3)">👥 Team admin</a>
-          <a class="btn btn-secondary" href="/" style="margin-left:8px">← Back to add-on</a>
-          <button class="btn btn-secondary" onclick="signOut()" style="margin-left:4px">Sign out</button>
+          <a id="team-link" class="btn btn-secondary" href="/team.html" style="display:none;color:#f59e0b;border-color:rgba(245,158,11,.3)" data-i18n="history.teamAdmin">👥 Team admin</a>
+          <a class="btn btn-secondary" href="/" data-i18n="history.backToAddon">← Back to add-on</a>
+          <button class="btn btn-secondary" onclick="signOut()" data-i18n="btn.signOut">Sign out</button>
         </div>
       </div>
 
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-label">Meetings tracked</div>
+          <div class="stat-label" data-i18n="history.statMeetings">Meetings tracked</div>
           <div class="stat-value green" id="stat-meetings">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Unique people seen</div>
+          <div class="stat-label" data-i18n="history.statPeople">Unique people seen</div>
           <div class="stat-value blue" id="stat-people">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Days with a meeting (last 90)</div>
+          <div class="stat-label" data-i18n="history.statActiveDays">Days with a meeting (last 90)</div>
           <div class="stat-value" id="stat-active-days">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Recurring series</div>
+          <div class="stat-label" data-i18n="history.statSeries">Recurring series</div>
           <div class="stat-value" id="stat-series">—</div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-tab="meetings" onclick="switchTab('meetings')">Meetings</button>
-        <button class="tab" data-tab="series" onclick="switchTab('series')">Series</button>
-        <button class="tab" data-tab="people" onclick="switchTab('people')">People</button>
-        <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">Calendar</button>
+        <button class="tab active" data-tab="meetings" onclick="switchTab('meetings')" data-i18n="history.tabMeetings">Meetings</button>
+        <button class="tab" data-tab="series" onclick="switchTab('series')" data-i18n="nav.series">Series</button>
+        <button class="tab" data-tab="people" onclick="switchTab('people')" data-i18n="nav.people">People</button>
+        <button class="tab" data-tab="calendar" onclick="switchTab('calendar')" data-i18n="nav.calendar">Calendar</button>
       </div>
 
       <!-- Meetings tab -->
       <div id="tab-meetings" class="tab-content active">
         <!-- Auto-Capture Pro Banner for Free Users -->
         <div id="auto-capture-banner" style="display:none;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div style="font-size:.85rem;color:#e6edf3;line-height:1.45">
+          <div style="font-size:.85rem;color:#e6edf3;line-height:1.45" data-i18n="history.autoCaptureBanner">
             ⚡ <strong>Hands-Free Auto-Capture</strong>: Pro automatically records and exports every Google Meet to Sheets in the background — even if you close the side-panel.
           </div>
-          <button class="btn" style="background:#4ade80;color:#0d1117;padding:6px 14px;font-size:.8rem;white-space:nowrap" onclick="upgradeFromHistory(this)">Upgrade to Pro ($9.99)</button>
+          <button class="btn" style="background:#4ade80;color:#0d1117;padding:6px 14px;font-size:.8rem;white-space:nowrap" onclick="upgradeFromHistory(this)" data-i18n="history.upgradePro">Upgrade to Pro ($9.99)</button>
         </div>
-        <input id="search-meetings" class="search-box" type="text" placeholder="Search meetings by title…" oninput="renderMeetings()" />
+        <input id="search-meetings" class="search-box" type="text" data-i18n-placeholder="history.searchMeetings" placeholder="Search meetings by title…" oninput="renderMeetings()" />
         <div class="section">
           <table>
             <thead>
               <tr>
-                <th data-sort="createdAt">Date ↓</th>
-                <th>Title</th>
-                <th class="right">Present</th>
-                <th class="right">Duration</th>
-                <th class="right nowrap">Export</th>
+                <th data-sort="createdAt" data-i18n="history.thDate">Date ↓</th>
+                <th data-i18n="history.thTitle">Title</th>
+                <th class="right" data-i18n="attendee.present">Present</th>
+                <th class="right" data-i18n="attendee.duration">Duration</th>
+                <th class="right nowrap" data-i18n="btn.export">Export</th>
               </tr>
             </thead>
-            <tbody id="meetings-rows"><tr><td colspan="5" class="muted">No meetings tracked yet.</td></tr></tbody>
+            <tbody id="meetings-rows"><tr><td colspan="5" class="muted" data-i18n="history.noMeetings">No meetings tracked yet.</td></tr></tbody>
           </table>
         </div>
       </div>
 
       <!-- People tab -->
       <div id="tab-people" class="tab-content">
-        <input id="search-people" class="search-box" type="text" placeholder="Search people by name or email…" oninput="renderPeople()" />
+        <input id="search-people" class="search-box" type="text" data-i18n-placeholder="history.searchPeople" placeholder="Search people by name or email…" oninput="renderPeople()" />
         <div class="section">
           <table>
             <thead>
               <tr>
-                <th>Person</th>
-                <th class="right">Meetings</th>
-                <th class="right">Total time</th>
-                <th>Attendance %</th>
-                <th class="nowrap">Last seen</th>
+                <th data-i18n="history.thPerson">Person</th>
+                <th class="right" data-i18n="history.thMeetings">Meetings</th>
+                <th class="right" data-i18n="history.thTotalTime">Total time</th>
+                <th data-i18n="history.thAttendancePct">Attendance %</th>
+                <th class="nowrap" data-i18n="history.thLastSeen">Last seen</th>
               </tr>
             </thead>
-            <tbody id="people-rows"><tr><td colspan="5" class="muted">No people tracked yet.</td></tr></tbody>
+            <tbody id="people-rows"><tr><td colspan="5" class="muted" data-i18n="history.noPeople">No people tracked yet.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -246,8 +249,8 @@
             <button id="series-pro-btn" class="btn" style="background:#4ade80;color:#0d1117;padding:6px 14px;font-weight:600" onclick="onSeriesProCta(this)"></button>
           </div>
         </div>
-        <input id="search-series" class="search-box" type="text" placeholder="Search recurring meetings by title…" oninput="renderSeries()" />
-        <div id="series-empty" class="section muted" style="display:none;text-align:center;padding:32px 18px">
+        <input id="search-series" class="search-box" type="text" data-i18n-placeholder="history.searchSeries" placeholder="Search recurring meetings by title…" oninput="renderSeries()" />
+        <div id="series-empty" class="section muted" style="display:none;text-align:center;padding:32px 18px" data-i18n="history.noSeries">
           No recurring meetings rolled up yet. Track a meeting from a Google Calendar series (weekly standup, monthly review, etc.) 2+ times — the per-person attendance breakdown will appear here.
         </div>
         <div id="series-list"></div>
@@ -256,16 +259,16 @@
       <!-- Calendar tab -->
       <div id="tab-calendar" class="tab-content">
         <div class="section">
-          <div style="margin-bottom:16px;color:var(--muted);font-size:.85rem">Each cell is a day in the last 90 days. Brighter = more meetings tracked.</div>
+          <div style="margin-bottom:16px;color:var(--muted);font-size:.85rem" data-i18n="history.calIntro">Each cell is a day in the last 90 days. Brighter = more meetings tracked.</div>
           <div id="calendar-grid" class="calendar-grid"></div>
           <div class="calendar-legend">
-            <span>Less</span>
+            <span data-i18n="history.calLess">Less</span>
             <div class="calendar-cell"></div>
             <div class="calendar-cell l1"></div>
             <div class="calendar-cell l2"></div>
             <div class="calendar-cell l3"></div>
             <div class="calendar-cell l4"></div>
-            <span>More</span>
+            <span data-i18n="history.calMore">More</span>
           </div>
           <div id="calendar-detail" style="margin-top:16px;color:var(--muted);font-size:.85rem;min-height:20px"></div>
         </div>
@@ -348,6 +351,7 @@
         document.getElementById('login-screen').style.display = '';
       }
     }
+    initI18n();
     initSession();
 
     async function loadHistory() {
@@ -367,7 +371,11 @@
           const me = await meRes.json();
           if (me.teamAdmin) document.getElementById('team-link').style.display = 'inline-block';
         }
-        if (bRes.ok) renderProCta(await bRes.json());
+        if (bRes.ok) {
+          const bStatus = await bRes.json();
+          window._lastBillingStatus = bStatus;
+          renderProCta(bStatus);
+        }
         if (!hRes.ok) throw new Error(`history ${hRes.status}`);
         data = await hRes.json();
         seriesData = sRes.ok ? await sRes.json() : { series: [], totalSeries: 0 };
@@ -432,13 +440,13 @@
       const toggle = document.getElementById('series-pro-interval');
       if (!box || !status?.individual || !status?.billingConfigured) { if (box) box.style.display = 'none'; return; }
       if (status.plan === 'pro') {
-        text.textContent = 'Pro ✓ — cumulative class attendance reports are added to every export.';
-        btn.textContent = 'Manage billing';
+        text.textContent = t('history.seriesProActive', 'Pro ✓ — cumulative class attendance reports are added to every export.');
+        btn.textContent = t('history.manageBilling', 'Manage billing');
         btn.dataset.mode = 'portal';
         if (toggle) toggle.style.display = 'none';
       } else {
-        text.textContent = 'Pro adds a cumulative "Class Summary" tab to your export — per-student attendance % across every session of a recurring class.';
-        btn.textContent = 'Upgrade to Pro';
+        text.textContent = t('history.seriesProText', 'Pro adds a cumulative "Class Summary" tab to your export — per-student attendance % across every session of a recurring class.');
+        btn.textContent = t('history.upgradeToPro', 'Upgrade to Pro');
         btn.dataset.mode = 'checkout';
         if (toggle) {
           toggle.style.display = status.annualAvailable ? '' : 'none';
@@ -512,12 +520,39 @@
     const fmtDuration = AttHistory.fmtDuration;
     const fmtMinutes = AttHistory.fmtMinutes;
     const pct = AttHistory.pct;
+    const t = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : (fallback || key));
+
+    function initI18n() {
+      if (typeof AttStrings === 'undefined') return;
+      const cur = AttStrings.getLocale();
+      document.documentElement.dir = (cur === 'ar' || cur === 'he' || cur === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = cur;
+      const sel = document.getElementById('history-lang-select');
+      if (sel) {
+        sel.innerHTML = AttStrings.LOCALES.map(l =>
+          `<option value="${l.code}" ${l.code === cur ? 'selected' : ''}>${l.flag} ${l.label}</option>`
+        ).join('');
+      }
+      AttStrings.applyTranslations();
+    }
+
+    function onLangChange(code) {
+      if (typeof AttStrings === 'undefined') return;
+      AttStrings.setLocale(code, true);
+      document.documentElement.dir = (code === 'ar' || code === 'he' || code === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
+      AttStrings.applyTranslations();
+      renderMeetings();
+      renderPeople();
+      renderSeries();
+      if (window._lastBillingStatus) renderProCta(window._lastBillingStatus);
+    }
 
     function renderMeetings() {
       const rows = AttHistory.filterMeetings(data.meetings, document.getElementById('search-meetings').value);
       const body = document.getElementById('meetings-rows');
       if (!rows.length) {
-        body.innerHTML = '<tr><td colspan="5" class="muted">No meetings match.</td></tr>';
+        body.innerHTML = `<tr><td colspan="5" class="muted">${t('history.noMeetingsMatch', 'No meetings match.')}</td></tr>`;
         return;
       }
       body.innerHTML = rows.map(m => `
@@ -565,7 +600,7 @@
       const rows = AttHistory.filterPeople(data.people, document.getElementById('search-people').value);
       const body = document.getElementById('people-rows');
       if (!rows.length) {
-        body.innerHTML = '<tr><td colspan="5" class="muted">No people match.</td></tr>';
+        body.innerHTML = `<tr><td colspan="5" class="muted">${t('history.noPeopleMatch', 'No people match.')}</td></tr>`;
         return;
       }
       body.innerHTML = rows.map(p => `
@@ -592,7 +627,7 @@
       }
       empty.style.display = 'none';
       if (rows.length === 0) {
-        list.innerHTML = '<div class="section muted" style="text-align:center">No series match that search.</div>';
+        list.innerHTML = `<div class="section muted" style="text-align:center">${t('history.noSeriesMatch', 'No series match that search.')}</div>`;
         return;
       }
 
@@ -610,7 +645,7 @@
             <td><div style="display:flex;align-items:center;gap:8px;min-width:120px"><div class="progress-bar" style="flex:1"><div style="width:${Math.round(p.attendanceRate * 100)}%"></div></div><span style="font-size:.75rem;color:var(--muted);min-width:36px">${pct(p.attendanceRate)}</span></div></td>
             <td class="right nowrap muted">${fmtMinutes(p.totalMinutes)}</td>
           </tr>
-        `).join('') || '<tr><td colspan="4" class="muted">No participants tracked.</td></tr>';
+        `).join('') || `<tr><td colspan="4" class="muted">${t('history.noPeople', 'No participants tracked.')}</td></tr>`;
 
         return `
           <div class="series-card" data-id="${safeRid}">
@@ -620,17 +655,17 @@
                 <div class="series-meta">${s.instanceCount} meeting${s.instanceCount === 1 ? '' : 's'} · ${esc(dateRange)} · top attendee ${esc(topLine)}</div>
               </div>
               <div class="series-chip">${s.uniquePeople} ${s.uniquePeople === 1 ? 'person' : 'people'}</div>
-              <button type="button" class="series-share" onclick="event.stopPropagation();shareSeries('${safeRid}', this)" title="Get a public link to share this series" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.7rem;font-weight:600;margin-right:8px">Share</button>
+              <button type="button" class="series-share" onclick="event.stopPropagation();shareSeries('${safeRid}', this)" title="${t('btn.share', 'Share')}" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.7rem;font-weight:600;margin-right:8px">${t('btn.share', 'Share')}</button>
               <div class="series-toggle">▶</div>
             </div>
             <div class="series-body">
               <table>
                 <thead>
                   <tr>
-                    <th>Person</th>
-                    <th class="right">Attended</th>
-                    <th>Attendance</th>
-                    <th class="right">Total time</th>
+                    <th>${t('history.thPerson', 'Person')}</th>
+                    <th class="right">${t('history.thAttended', 'Attended')}</th>
+                    <th>${t('history.thAttendance', 'Attendance')}</th>
+                    <th class="right">${t('history.thTotalTime', 'Total time')}</th>
                   </tr>
                 </thead>
                 <tbody>${peopleRows}</tbody>

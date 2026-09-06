@@ -71,49 +71,58 @@
     }
   </style>
   <script src="js/utils.js"></script>
+  <script src="js/strings.js"></script>
   <script src="js/share.js"></script>
 </head>
 <body>
   <div class="container">
-    <div class="brand">
-      <img src="icons/icon-96.png" alt="" />
-      <span>Shared via <a href="https://attendancetracker.dev/">Attendance Tracker</a></span>
+    <div class="brand" style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="icons/icon-96.png" alt="" />
+        <span><span data-i18n="share.sharedVia">Shared via</span> <a href="https://attendancetracker.dev/">Attendance Tracker</a></span>
+      </div>
+      <select id="share-lang-select" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.78rem;cursor:pointer" onchange="onShareLangChange(this.value)">
+      </select>
     </div>
-    <div id="loading">Loading shared dashboard…</div>
+    <div id="loading" data-i18n="share.loading">Loading shared dashboard…</div>
     <div id="content" style="display:none">
       <h1 id="title"></h1>
       <div class="meta" id="meta"></div>
       <div class="stat-row">
         <div class="stat-card">
-          <div class="stat-label">Instances</div>
+          <div class="stat-label" data-i18n="share.statInstances">Instances</div>
           <div class="stat-value green" id="stat-instances">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">People tracked</div>
+          <div class="stat-label" data-i18n="share.statPeople">People tracked</div>
           <div class="stat-value blue" id="stat-people">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Date range</div>
+          <div class="stat-label" data-i18n="share.statRange">Date range</div>
           <div class="stat-value" id="stat-range" style="font-size:.95rem;font-weight:600">—</div>
         </div>
       </div>
       <div class="section">
         <table>
           <thead>
-            <tr><th>Person</th><th class="right">Attended</th><th>Attendance</th></tr>
+            <tr>
+              <th data-i18n="history.thPerson">Person</th>
+              <th class="right" data-i18n="share.thAttended">Attended</th>
+              <th data-i18n="history.thAttendance">Attendance</th>
+            </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
       <div class="cta">
-        <h3>Want this for your own meetings?</h3>
-        <p>Track attendance in any Google Meet call and get a dashboard like this — free.</p>
-        <a class="btn" href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=share_link" target="_blank">Install from Marketplace</a>
+        <h3 data-i18n="share.ctaTitle">Want this for your own meetings?</h3>
+        <p data-i18n="share.ctaSubtitle">Track attendance in any Google Meet call and get a dashboard like this — free.</p>
+        <a class="btn" href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=share_link" target="_blank" data-i18n="share.ctaBtn">Install from Marketplace</a>
       </div>
     </div>
     <div id="errorBox" class="error" style="display:none">
-      <strong>This link is no longer available.</strong>
-      <div style="margin-top:6px;font-size:.85rem">It may have expired, been revoked, or never existed.</div>
+      <strong data-i18n="share.errorTitle">This link is no longer available.</strong>
+      <div style="margin-top:6px;font-size:.85rem" data-i18n="share.errorSubtitle">It may have expired, been revoked, or never existed.</div>
     </div>
     <div class="footer">
       <a href="https://attendancetracker.dev/">attendancetracker.dev</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
@@ -125,7 +134,44 @@
     // Delegates to the shared js/ modules (loaded in <head>): escaping to
     // AttUtils, and the pure date/range/row-render logic to AttShare.
     const esc = (s) => AttUtils.escHtml(s);
+    const t = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : (fallback || key));
+
+    function initShareI18n() {
+      if (typeof AttStrings === 'undefined') return;
+      const cur = AttStrings.getLocale();
+      document.documentElement.dir = (cur === 'ar' || cur === 'he' || cur === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = cur;
+      const sel = document.getElementById('share-lang-select');
+      if (sel) {
+        sel.innerHTML = AttStrings.LOCALES.map(l =>
+          `<option value="${l.code}" ${l.code === cur ? 'selected' : ''}>${l.flag} ${l.label}</option>`
+        ).join('');
+      }
+      AttStrings.applyTranslations();
+    }
+
+    function onShareLangChange(code) {
+      if (typeof AttStrings === 'undefined') return;
+      AttStrings.setLocale(code, true);
+      document.documentElement.dir = (code === 'ar' || code === 'he' || code === 'ur') ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
+      AttStrings.applyTranslations();
+      if (window._lastShareData) renderShareData(window._lastShareData);
+    }
+
+    function renderShareData(data) {
+      document.getElementById('title').textContent = data.title;
+      const range = AttShare.computeRange(data.firstAt, data.lastAt);
+      const seriesLabel = t('history.statSeries', 'Recurring meeting');
+      document.getElementById('meta').textContent = `${seriesLabel} · ${range}`;
+      document.getElementById('stat-instances').textContent = data.instanceCount;
+      document.getElementById('stat-people').textContent = data.uniquePeople;
+      document.getElementById('stat-range').textContent = range;
+      document.getElementById('rows').innerHTML = AttShare.renderPeopleRows(data.people, data.instanceCount, esc);
+    }
+
     async function load() {
+      initShareI18n();
       const params = new URLSearchParams(window.location.search);
       const token = params.get('t');
       const loadingEl = document.getElementById('loading');
@@ -140,13 +186,8 @@
         const res = await fetch(`${BACKEND_URL}/public/share/${encodeURIComponent(token)}`);
         if (!res.ok) throw new Error(res.status);
         const data = await res.json();
-        document.getElementById('title').textContent = data.title;
-        const range = AttShare.computeRange(data.firstAt, data.lastAt);
-        document.getElementById('meta').textContent = `Recurring meeting · ${range}`;
-        document.getElementById('stat-instances').textContent = data.instanceCount;
-        document.getElementById('stat-people').textContent = data.uniquePeople;
-        document.getElementById('stat-range').textContent = range;
-        document.getElementById('rows').innerHTML = AttShare.renderPeopleRows(data.people, data.instanceCount, esc);
+        window._lastShareData = data;
+        renderShareData(data);
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
       } catch (e) {

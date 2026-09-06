@@ -35,6 +35,13 @@
       },
       {
         "@type": "Offer",
+        "name": "Educator Annual Pass",
+        "price": "4.99",
+        "priceCurrency": "USD",
+        "category": "Subscription"
+      },
+      {
+        "@type": "Offer",
         "name": "Individual Lifetime Pro",
         "price": "9.99",
         "priceCurrency": "USD",
@@ -156,7 +163,7 @@
 
     /* Main Container */
     .container {
-      max-width: 1080px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 50px 20px 80px;
       flex: 1;
@@ -166,7 +173,7 @@
     /* Header & Hero */
     .hero-section {
       text-align: center;
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto 48px;
     }
 
@@ -203,14 +210,20 @@
     .plans-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 24px;
+      gap: 20px;
       margin-bottom: 48px;
       align-items: stretch;
     }
 
-    @media (min-width: 860px) {
+    @media (min-width: 680px) {
       .plans-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1060px) {
+      .plans-grid {
+        grid-template-columns: repeat(4, 1fr);
       }
     }
 
@@ -544,11 +557,53 @@
         </a>
       </div>
 
-      <!-- Plan 2: Educator & Individual Lifetime Pro (Featured) -->
+      <!-- Plan 2: Educator Annual Pass -->
+      <div class="plan-card">
+        <div class="card-top">
+          <div class="plan-name">Educator Annual Pass</div>
+          <div class="plan-description">Affordable full power designed specifically for teachers, tutors, and solo educators.</div>
+          <div class="price-wrap">
+            <span class="price-was">$9.99</span>
+            <span class="price-num">$4.99</span>
+            <span class="price-period">/ year</span>
+          </div>
+          <div class="price-note">Billed annually · Cancel anytime · &lt; 42¢/mo</div>
+        </div>
+
+        <ul class="plan-features">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Unlimited</strong> Google Sheets exports</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Hands-Free Auto-Capture</strong> when meeting ends</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Cumulative <strong>Class Summary</strong> multi-session reports</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Attendee certificates &amp; PDF generation</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Priority email support</span>
+          </li>
+        </ul>
+
+        <button type="button" id="btn-buy-educator" class="btn-plan btn-plan-secondary" onclick="startPricingCheckout('educator', this)">
+          <span>Get Educator Pass — $4.99/yr</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+
+      <!-- Plan 3: Individual Lifetime Pro (Featured) -->
       <div class="plan-card featured">
         <div class="card-ribbon">⭐ Best Value · Most Popular</div>
         <div class="card-top">
-          <div class="plan-name">Educator &amp; Individual Lifetime Pass</div>
+          <div class="plan-name">Individual Lifetime Pass</div>
           <div class="plan-description">Full unrestricted power for school teachers, university professors, tutors, and team leads.</div>
           <div class="price-wrap">
             <span class="price-was">$19.99</span>
