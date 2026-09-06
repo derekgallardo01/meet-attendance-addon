@@ -1192,19 +1192,19 @@
         <h3 style="font-size:1.1rem;font-weight:700;margin:0 0 16px;color:#e6edf3;text-align:center">Built for the people who actually take attendance</h3>
         <div style="text-align:left;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:40px">
           <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px">
-            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">🧑‍🏫 Teachers &amp; trainers</h4>
+            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">Teachers &amp; trainers</h4>
             <p style="margin:0;color:#8b949e;font-size:.8rem;line-height:1.5">Stop manually checking the participant list. Automatic roll-call with timestamps for every class.</p>
           </div>
           <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px">
-            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">📊 Webinar hosts</h4>
+            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">Webinar hosts</h4>
             <p style="margin:0;color:#8b949e;font-size:.8rem;line-height:1.5">Know exactly who watched live and how long they stayed. Export to Sheets for follow-up.</p>
           </div>
           <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px">
-            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">👥 Team leads</h4>
+            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">Team leads</h4>
             <p style="margin:0;color:#8b949e;font-size:.8rem;line-height:1.5">Track standup and meeting participation across recurring calls. See trends over time.</p>
           </div>
           <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px">
-            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">🔒 Privacy-first</h4>
+            <h4 style="margin:0 0 6px;color:#58a6ff;font-size:.9rem">Privacy-first</h4>
             <p style="margin:0;color:#8b949e;font-size:.8rem;line-height:1.5">Data only flows through your own Google account. We don't sell, share, or train on your meetings.</p>
           </div>
         </div>
@@ -1278,16 +1278,23 @@
       <div id="meeting-title">Not in a meeting</div>
       <div id="meeting-type" style="font-size:.65rem;color:#9ca3af;margin-top:1px;display:none"></div>
     </div>
-    <!-- Settings gear icon — only shown when signed in (updateAuthUI sets
-         display). Opens the Slack webhook config modal. -->
-    <button id="btn-settings" type="button" onclick="openSettingsModal()" title="Settings"
-      style="display:none;background:transparent;border:none;color:#8b949e;cursor:pointer;padding:6px;margin-left:auto"
-      aria-label="Settings">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+      <button id="btn-header-pro" type="button" onclick="showUpgradeModal('header')" title="Upgrade to Pro"
+        style="display:none;background:rgba(253,214,99,.12);border:1px solid rgba(253,214,99,.32);color:#fdd663;border-radius:12px;padding:3px 9px;font-size:.72rem;font-weight:600;cursor:pointer;line-height:1.3;white-space:nowrap"
+        aria-label="Upgrade to Pro">
+        Pro: $4.99/yr
+      </button>
+      <!-- Settings gear icon — only shown when signed in (updateAuthUI sets
+           display). Opens the Slack webhook config modal. -->
+      <button id="btn-settings" type="button" onclick="openSettingsModal()" title="Settings"
+        style="display:none;background:transparent;border:none;color:#8b949e;cursor:pointer;padding:6px"
+        aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- ── Auth bar ── -->
@@ -1338,30 +1345,36 @@
     </button>
   </div>
 
+  <!-- ── Export Quota Indicator (Free tier) ── -->
+  <div id="export-quota-indicator" style="display:none;align-items:center;justify-content:space-between;padding:5px 16px;font-size:11px;color:#8b949e;background:rgba(255,255,255,.03);border-top:1px solid #30363d">
+    <span id="export-quota-text">2 of 2 free exports remaining this month</span>
+    <a href="#" id="export-quota-upgrade-link" onclick="showUpgradeModal('quota_indicator');return false;" style="color:#fdd663;text-decoration:none;font-weight:600;margin-left:8px;white-space:nowrap">Go Unlimited ($4.99)</a>
+  </div>
+
   <div id="sheet-link-bar" style="display:none; padding:4px 16px; font-size:11px;">
-    <a id="sheet-link" href="#" target="_blank" style="color:var(--green); text-decoration:none;">📄 Open exported sheet</a>
-    <a href="#" onclick="downloadPdfReport(); return false;" style="color:var(--green); text-decoration:none; margin-left:14px;">⬇ PDF report</a>
-    <a href="#" onclick="downloadCertificates(); return false;" style="color:var(--green); text-decoration:none; margin-left:14px;">🎓 Certificates</a>
+    <a id="sheet-link" href="#" target="_blank" style="color:var(--green); text-decoration:none;">Open exported sheet</a>
+    <a href="#" onclick="downloadPdfReport(); return false;" style="color:var(--green); text-decoration:none; margin-left:14px;">PDF report</a>
+    <a href="#" onclick="downloadCertificates(); return false;" style="color:var(--green); text-decoration:none; margin-left:14px;">Certificates</a>
   </div>
   <!-- One-off → recurring tip: only for a NON-recurring meeting whose title was
        exported before (a real repeat). Once ever, dismissible. -->
   <div id="recurring-tip" style="display:none; align-items:flex-start; gap:8px; padding:8px 16px; font-size:11px; color:#9ca3af; background:rgba(74,222,128,.06); border-top:1px solid #30363d">
-    <span style="line-height:1.45">💡 Tracking this one regularly? Put it on a <strong style="color:#c9d1d9">recurring</strong> Google Calendar invite — then you'll see per-person attendance trends across every session.</span>
+    <span style="line-height:1.45">Tracking this one regularly? Put it on a <strong style="color:#c9d1d9">recurring</strong> Google Calendar invite — then you'll see per-person attendance trends across every session.</span>
     <button type="button" onclick="closeRecurringTip()" aria-label="Dismiss" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;margin-left:auto;flex-shrink:0">×</button>
   </div>
   <!-- Review ask at the value moment: shown once ever, after the user's 2nd
-       MANUAL export (they've felt the payoff more than once = a genuinely happy
-       user, not a one-off tester). Dismissible; never stacks with the recurring
-       tip. Respects the at-most-one-lifetime-popup, gentle-upsell rule. -->
+         MANUAL export (they've felt the payoff more than once = a genuinely happy
+         user, not a one-off tester). Dismissible; never stacks with the recurring
+         tip. Respects the at-most-one-lifetime-popup, gentle-upsell rule. -->
   <div id="review-ask" style="display:none; align-items:flex-start; gap:8px; padding:8px 16px; font-size:11px; color:#9ca3af; background:rgba(96,165,250,.06); border-top:1px solid #30363d">
-    <span style="line-height:1.45">⭐ Getting value from this? A quick rating helps other hosts find it — <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=inapp_review" target="_blank" rel="noopener" onclick="logUserEvent('review_ask_clicked', {})" style="color:#60a5fa;text-decoration:none;font-weight:600">leave a review</a> (takes 5 seconds).</span>
+    <span style="line-height:1.45">Getting value from this? A quick rating helps other hosts find it — <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968?utm_source=inapp_review" target="_blank" rel="noopener" onclick="logUserEvent('review_ask_clicked', {})" style="color:#60a5fa;text-decoration:none;font-weight:600">leave a review</a> (takes 5 seconds).</span>
     <button type="button" onclick="closeReviewAsk()" aria-label="Dismiss" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;margin-left:auto;flex-shrink:0">×</button>
   </div>
 
   <!-- Team admin link — only shown to users where /oauth/me reports
        teamAdmin:true (renderTeamAdminLink() toggles display). Stays hidden
        for personal-gmail users and non-admins. -->
-  <a id="team-admin-link" href="https://attendancetracker.dev/team.html" onclick="openTeamPage(event)" target="_blank" style="display:none;padding:6px 16px;font-size:11px;color:#f59e0b;text-decoration:none">👥 Open team admin dashboard →</a>
+  <a id="team-admin-link" href="https://attendancetracker.dev/team.html" onclick="openTeamPage(event)" target="_blank" style="display:none;padding:6px 16px;font-size:11px;color:#f59e0b;text-decoration:none">Open team admin dashboard →</a>
 
   <!-- ── Summary ── -->
   <div class="summary-row">
@@ -1432,13 +1445,13 @@
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
       <div style="font-weight:600;color:#e6edf3;font-size:.85rem;margin-top:4px">Ready when you are</div>
-      <span>Press <strong style="color:#4ade80">▶ Start</strong> above to begin tracking</span>
+      <span>Press <strong style="color:#4ade80">Start</strong> above to begin tracking</span>
       <div style="margin-top:10px;padding:8px 12px;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.18);border-radius:6px;font-size:.7rem;color:#9ec8ff;max-width:260px;line-height:1.45">
         <strong>Tip:</strong> Works best when you start tracking right as the meeting begins, so join times are captured.
       </div>
       <div style="margin-top:14px">
         <button type="button" onclick="startSimulation()" style="background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);color:#4ade80;border-radius:20px;padding:7px 14px;font-size:.75rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s ease">
-          <span>🧪 Testing solo? Load 10 demo students →</span>
+          <span>Testing solo? Load 10 demo students →</span>
         </button>
       </div>
     </div>
@@ -1453,8 +1466,8 @@
 
   <!-- ── Footer ── -->
   <div style="padding:12px 16px;text-align:center;font-size:.65rem;color:#6e7681;margin-top:auto">
-    <a id="history-link" href="https://attendancetracker.dev/history.html" onclick="openHistoryPage(event)" target="_blank" style="color:#9ec8ff">📋 All meetings</a>
-    · <a href="#" onclick="openSettingsModal();return false" style="color:#9ec8ff">⚙ Settings</a>
+    <a id="history-link" href="https://attendancetracker.dev/history.html" onclick="openHistoryPage(event)" target="_blank" style="color:#9ec8ff">All meetings</a>
+    · <a href="#" onclick="openSettingsModal();return false" style="color:#9ec8ff">Settings</a>
     · <a href="https://attendancetracker.dev/pricing.html" target="_blank" style="color:#6e7681">Pricing</a>
     · <a href="https://attendancetracker.dev/privacy.html" target="_blank" style="color:#6e7681">Privacy</a>
     · <a href="https://attendancetracker.dev/terms.html" target="_blank" style="color:#6e7681">Terms</a>
@@ -1671,7 +1684,7 @@ async function handleAuthCode(response) {
     if (window.Sentry) Sentry.setUser({ email: data.email });
 
     // First sign-in & no source captured → ask. Pass detected source so the
-    // modal can greet "Hey 👋 saw you came from Reddit" instead of generic.
+    // modal can greet "Hey, saw you came from Reddit" instead of generic.
     // Remember the state so we can re-ask at a higher-intent moment (after their
     // first export) if they skip it here.
     state._needsSource = !!data.needsAcquisitionSource;
@@ -1842,7 +1855,7 @@ function runTour(stepIdx) {
     <div style="margin-top:4px">${step.body}</div>
     <div class="tour-actions">
       <button class="tour-skip" data-action="skip">Skip tour</button>
-      <button data-action="next">${stepIdx === TOUR_STEPS.length - 1 ? 'Got it ✓' : 'Next →'}</button>
+      <button data-action="next">${stepIdx === TOUR_STEPS.length - 1 ? 'Got it' : 'Next →'}</button>
     </div>
   `;
   document.body.appendChild(tip);
@@ -1904,18 +1917,18 @@ function showSourceModal(detectedSource) {
   const title = document.getElementById('source-modal-title');
   const subtitle = document.getElementById('source-modal-subtitle');
   const greetings = {
-    reddit:        ['Hey 👋 saw you came from Reddit', 'Mind sharing which sub? Helps me know where to hang out.'],
-    youtube:       ['Hey 👋 saw you came from YouTube', 'Which video? Trying to figure out what content actually works.'],
-    google_search: ['Hey 👋 found us via Google', 'Quick favor — what were you searching for? Helps me reach more folks like you.'],
-    marketplace:   ['Hey 👋 thanks for installing!', 'Anything in particular you\'re hoping to do? Helps me prioritize.'],
-    friend:        ['Hey 👋 a teammate sent you?', 'I\'d love to know who — drop their name and I\'ll thank them.'],
+    reddit:        ['Hey, saw you came from Reddit', 'Mind sharing which sub? Helps me know where to hang out.'],
+    youtube:       ['Hey, saw you came from YouTube', 'Which video? Trying to figure out what content actually works.'],
+    google_search: ['Hey, found us via Google', 'Quick favor — what were you searching for? Helps me reach more folks like you.'],
+    marketplace:   ['Hey, thanks for installing!', 'Anything in particular you\'re hoping to do? Helps me prioritize.'],
+    friend:        ['Hey, a teammate sent you?', 'I\'d love to know who — drop their name and I\'ll thank them.'],
   };
   const g = greetings[detectedSource];
   if (g && title && subtitle) {
     title.textContent = g[0];
     subtitle.textContent = g[1];
   } else if (title && subtitle) {
-    title.textContent = 'Quick question 👋';
+    title.textContent = 'Quick question';
     subtitle.textContent = 'How did you find Attendance Tracker? Helps me figure out where to focus.';
   }
 
@@ -2038,10 +2051,16 @@ async function deleteMyAccount() {
 function updateAuthUI() {
   const bar = document.getElementById('auth-bar');
   if (!bar) return; // guard against missing element
-  // Toggle the settings gear icon — only relevant when signed in.
+  // Toggle the settings gear icon and pro header button — only relevant when signed in.
   const gear = document.getElementById('btn-settings');
   if (gear) gear.style.display = state.signedIn ? 'flex' : 'none';
+  const proBtn = document.getElementById('btn-header-pro');
+  if (proBtn) proBtn.style.display = (state.signedIn && !_isPro) ? 'inline-flex' : 'none';
+  const quotaInd = document.getElementById('export-quota-indicator');
+  if (quotaInd && (!state.signedIn || _isPro)) quotaInd.style.display = 'none';
+
   if (state.signedIn) {
+    loadBillingStatus().catch(() => {});
     bar.innerHTML = `
       <span class="auth-email">${escHtml(state.userEmail)}</span>
       <button class="auth-action" onclick="signOut()">Sign out</button>
@@ -2424,7 +2443,7 @@ async function refreshAttendance() {
   } catch (err) {
     console.error(err);
     setStatus('loading', `Error: ${err.message}`);
-    toast('⚠ Could not reach backend');
+    toast('Could not reach backend');
   }
 }
 
@@ -2710,10 +2729,10 @@ async function saveProfileNote() {
       body: JSON.stringify({ key: state._currentProfileKey, body }),
     });
     if (!res.ok) throw new Error(`${res.status}`);
-    status.textContent = '✓ Saved';
+    status.textContent = 'Saved';
     setTimeout(() => status.textContent = '', 2000);
   } catch (err) {
-    status.textContent = '⚠ Failed';
+    status.textContent = 'Failed';
   }
 }
 
@@ -2772,14 +2791,22 @@ async function ensureBilling() {
 
 async function loadBillingStatus() {
   const box = document.getElementById('settings-billing');
-  if (!box) return;
   try {
     const res = await authFetch(`${state.backendUrl}/billing/status`);
     if (!res.ok) return;
     const data = await res.json();
     _billing = data;
-    if (!data.billingConfigured) { box.style.display = 'none'; return; }
     _isPro = data.plan === 'pro';
+    const proBtn = document.getElementById('btn-header-pro');
+    if (proBtn) proBtn.style.display = (state.signedIn && !_isPro) ? 'inline-flex' : 'none';
+    if (data.exportQuota && !_isPro) {
+      updateQuotaIndicator(data.exportQuota.used, data.exportQuota.limit);
+    } else if (_isPro) {
+      const quotaInd = document.getElementById('export-quota-indicator');
+      if (quotaInd) quotaInd.style.display = 'none';
+    }
+    if (!box) return;
+    if (!data.billingConfigured) { box.style.display = 'none'; return; }
     const nameEl = document.getElementById('settings-plan-name');
     const btn = document.getElementById('settings-billing-btn');
     const descEl = document.getElementById('settings-billing-desc');
@@ -2796,6 +2823,21 @@ async function loadBillingStatus() {
       : 'Pro unlocks the org-wide team dashboard and auto-export for your whole domain.';
     box.style.display = 'block';
   } catch { /* leave hidden on error */ }
+}
+
+function updateQuotaIndicator(used, limit) {
+  const indicator = document.getElementById('export-quota-indicator');
+  const textEl = document.getElementById('export-quota-text');
+  if (!indicator || !textEl) return;
+  if (_isPro || !state.signedIn) {
+    indicator.style.display = 'none';
+    return;
+  }
+  const maxLimit = typeof limit === 'number' ? limit : 2;
+  const usedCount = typeof used === 'number' ? used : 0;
+  const remaining = Math.max(0, maxLimit - usedCount);
+  textEl.textContent = `${remaining} of ${maxLimit} free exports remaining this month`;
+  indicator.style.display = 'flex';
 }
 
 // Upgrade (free) → opens Upgrade Modal; manage (pro) → Customer Portal. Both return a URL
@@ -2849,13 +2891,13 @@ function showUpgradeModal(reason) {
   const note = document.getElementById('upgrade-modal-note');
   if (note) {
     if (reason === 'exportQuota') {
-      note.textContent = '📊 You reached your monthly limit of 2 free exports. Upgrade to Pro for unlimited exports!';
+      note.textContent = 'You reached your monthly limit of 2 free exports. Upgrade to Pro for unlimited exports.';
       note.style.display = 'block';
     } else if (reason === 'autoExport') {
-      note.textContent = '⚡ Auto-exporting to Google Sheets on meeting end is a Pro feature.';
+      note.textContent = 'Auto-exporting to Google Sheets on meeting end is a Pro feature.';
       note.style.display = 'block';
     } else if (reason === 'certificates') {
-      note.textContent = '🎓 Generating student attendance certificates is a Pro feature.';
+      note.textContent = 'Generating student attendance certificates is a Pro feature.';
       note.style.display = 'block';
     } else {
       note.style.display = 'none';
@@ -2867,12 +2909,12 @@ function showUpgradeModal(reason) {
   const dealPill = document.getElementById('upgrade-deal-pill');
   if (dealPill) {
     if (isEdu) {
-      dealPill.innerHTML = '<span>🎓 Verified Educator Deal · 50% Off Applied</span>';
+      dealPill.innerHTML = '<span>Verified Educator Deal · 50% Off Applied</span>';
       dealPill.style.background = 'rgba(74,222,128,.14)';
       dealPill.style.borderColor = 'rgba(74,222,128,.35)';
       dealPill.style.color = '#4ade80';
     } else {
-      dealPill.innerHTML = '<span>✨ Limited Time Launch Deal · 50% Off</span>';
+      dealPill.innerHTML = '<span>Limited Time Launch Deal · 50% Off</span>';
       dealPill.style.background = 'rgba(253,214,99,.12)';
       dealPill.style.borderColor = 'rgba(253,214,99,.25)';
       dealPill.style.color = '#fdd663';
@@ -2938,11 +2980,11 @@ function updateExportCta() {
   const btnEl = document.getElementById('export-cta-btn');
   const n = distinctAttendeeCount();
   if (scopeBlocked) {
-    textEl.textContent = `🔒 You've tracked ${n} people — grant Google Drive access to save this to a Sheet.`;
+    textEl.textContent = `You've tracked ${n} people — grant Google Drive access to save this to a Sheet.`;
     btnEl.textContent = 'Grant Drive access to export';
   } else {
-    textEl.textContent = `📊 Attendance ready for ${n} people. Save it to Google Sheets before you leave.`;
-    btnEl.textContent = '💾 Save to Google Sheets';
+    textEl.textContent = `Attendance ready for ${n} people. Save it to Google Sheets before you leave.`;
+    btnEl.textContent = 'Save to Google Sheets';
   }
   cta.style.display = 'block';
 }
@@ -2961,7 +3003,7 @@ async function saveToSheets() {
   if (!state.participants.size) { toast('No data yet'); return; }
   if (document.getElementById('btn-sheets')?.dataset.scopeBlocked === '1') {
     logUserEvent('export_failed', { reason: 'scope_blocked' });
-    toast('⚠ Grant Drive permission to enable export — click "Grant access" above', 8000);
+    toast('Grant Drive permission to enable export — click "Grant access" above', 8000);
     return;
   }
   logUserEvent('export_clicked', { participantCount: state.participants.size });
@@ -2971,7 +3013,7 @@ async function saveToSheets() {
 
   // Note if meeting is still active — export anyway, just warn
   const anyPresent = [...state.participants.values()].some(p => p.present);
-  if (anyPresent) toast('⚠ Meeting still active — exporting current data…');
+  if (anyPresent) toast('Meeting still active — exporting current data…');
 
   toast('Checking Calendar…');
   try {
@@ -3042,7 +3084,7 @@ function maybeShowSoloNudge() {
   if (distinctAttendeeCount() > 1) return; // real meeting — no nudge
   state.soloNudgeConferenceId = state.conferenceId;
   saveState();
-  toast('👋 Looks like you were the only one here. Attendance Tracker shines when others join — open it in your next real meeting to see the full roll-call.', 9000);
+  toast('Looks like you were the only one here. Attendance Tracker shines when others join — open it in your next real meeting to see the full roll-call.', 9000);
 }
 
 // When the user leaves the panel (tab hidden / navigating away) mid- or
@@ -3348,32 +3390,38 @@ async function doExportToSheets(emailMap, calendarAttendees = [], opts = {}) {
     if (!res.ok) {
       let body = {};
       try { body = await res.json(); } catch {}
-      // Free tier has 3 exports/month; auto-export is also Pro.
+      // Free tier has monthly quota; auto-export is also Pro.
       if (res.status === 402) {
         const feature = body.feature || 'pro_required';
+        if (body.quota) updateQuotaIndicator(body.quota.used, body.quota.limit);
         logUserEvent('export_skipped', { reason: feature });
         showUpgradeModal(feature);
         return;
       }
       if (body.code === 'DRIVE_PERMISSION_MISSING') {
         logUserEvent('export_failed', { reason: 'drive_permission_missing' });
-        toast('⚠ Drive permission missing — sign out and sign in again with all permissions checked', 8000);
+        toast('Drive permission missing — sign out and sign in again with all permissions checked', 8000);
         return;
       }
       throw new Error(body.error || `${res.status}`);
     }
-    const { sheetUrl, isFirstExport } = await res.json();
+    const exportResult = await res.json();
+    const { sheetUrl, isFirstExport, quota } = exportResult;
+    if (quota) updateQuotaIndicator(quota.used, quota.limit);
     // Mark this conference as exported so the auto-export poll loop doesn't
     // re-fire after a manual export (and so a reload after auto-export stays quiet).
     state.autoExportedConferenceId = state.conferenceId;
     saveState();
     updateExportCta(); // hide the export prompt now that a Sheet exists
-    toast(opts.autoExport ? '✓ Auto-exported — sheet link sent to your email' : '✓ Saved to Sheets', opts.autoExport ? 6000 : 3000);
+    toast(opts.autoExport ? 'Auto-exported — sheet link sent to your email' : 'Saved to Sheets', opts.autoExport ? 6000 : 3000);
     const btn = document.getElementById('btn-sheets');
     if (btn) {
-      btn.textContent = '✓ Exported';
+      btn.textContent = 'Exported';
       btn.disabled = true;
-      setTimeout(() => { btn.textContent = '⬜ Sheet'; btn.disabled = false; }, 4000);
+      setTimeout(() => {
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span id="btn-sheets-label" data-i18n="btn.sheet">${(typeof t === 'function' && t('btn.sheet')) || 'Sheet'}</span>`;
+        btn.disabled = false;
+      }, 4000);
     }
     if (sheetUrl) {
       // Manual export pops the sheet in a new tab; auto-export does not — the
@@ -3400,7 +3448,7 @@ async function doExportToSheets(emailMap, calendarAttendees = [], opts = {}) {
     if (!opts.autoExport) maybeShowReviewAsk();
   } catch (err) {
     logUserEvent('export_failed', { reason: 'error', message: String(err.message || err).slice(0, 200) });
-    toast(`⚠ Sheets error: ${err.message}`);
+    toast(`Sheets error: ${err.message}`);
   }
 }
 
@@ -3549,7 +3597,7 @@ async function _downloadPdf({ type, filenameBase, event }) {
     if (!res.ok) {
       let m = {};
       try { m = await res.json(); } catch (e) { /* non-JSON error body */ }
-      toast(`⚠ PDF error: ${m.error || res.status}`);
+      toast(`PDF error: ${m.error || res.status}`);
       return false;
     }
     const blob = await res.blob();
@@ -3564,7 +3612,7 @@ async function _downloadPdf({ type, filenameBase, event }) {
     try { logUserEvent(event, {}); } catch (e) { /* best-effort */ }
     return true;
   } catch (e) {
-    toast('⚠ Could not generate the PDF.');
+    toast('Could not generate the PDF.');
     return false;
   }
 }
@@ -3712,7 +3760,7 @@ async function saveSettings() {
   const url = (input.value || '').trim();
   // Empty = clear the webhook. Anything else must look like a Slack webhook.
   if (url && !AttUtils.isValidSlackWebhook(url)) {
-    showSettingsStatus('⚠ Not a valid Slack webhook URL', '#f85149');
+    showSettingsStatus('Not a valid Slack webhook URL', '#f85149');
     return;
   }
   saveBtn.disabled = true;
@@ -3727,10 +3775,10 @@ async function saveSettings() {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `HTTP ${res.status}`);
     }
-    showSettingsStatus(url ? '✓ Saved' : '✓ Webhook cleared', '#4ade80');
+    showSettingsStatus(url ? 'Saved' : 'Webhook cleared', '#4ade80');
     setTimeout(closeSettingsModal, 1200);
   } catch (err) {
-    showSettingsStatus(`⚠ ${err.message}`, '#f85149');
+    showSettingsStatus(err.message, '#f85149');
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save';
@@ -3743,7 +3791,7 @@ async function testSlackWebhook() {
   const url = (input.value || '').trim();
   // If user pasted a fresh URL, validate before sending. Empty = use saved.
   if (url && !AttUtils.isValidSlackWebhook(url)) {
-    showSettingsStatus('⚠ Not a valid Slack webhook URL', '#f85149');
+    showSettingsStatus('Not a valid Slack webhook URL', '#f85149');
     return;
   }
   testBtn.disabled = true;
@@ -3758,9 +3806,9 @@ async function testSlackWebhook() {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `HTTP ${res.status}`);
     }
-    showSettingsStatus('✓ Test message sent — check your Slack channel', '#4ade80');
+    showSettingsStatus('Test message sent — check your Slack channel', '#4ade80');
   } catch (err) {
-    showSettingsStatus(`⚠ ${err.message}`, '#f85149');
+    showSettingsStatus(err.message, '#f85149');
   } finally {
     testBtn.disabled = false;
     testBtn.textContent = 'Send test';
@@ -4370,7 +4418,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeMatchModal()">Cancel</button>
         <button class="btn-secondary" onclick="skipMatchAndExport()">Skip matching</button>
-        <button class="btn-primary" onclick="confirmMatchAndExport()">✓ Confirm & Export to Sheets</button>
+        <button class="btn-primary" onclick="confirmMatchAndExport()">Confirm & Export to Sheets</button>
       </div>
     </div>
   </div>
@@ -4532,11 +4580,13 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- ── First-Export Celebration Modal ── -->
   <div id="celebrate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
     <div style="background:#161b22;border:1px solid #30363d;border-radius:14px;padding:24px;max-width:380px;width:100%;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:8px">🎉</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
       <div style="font-size:1.1rem;font-weight:700;color:#4ade80;margin-bottom:6px">First export complete!</div>
       <div style="color:#9ca3af;font-size:.84rem;line-height:1.5;margin-bottom:16px">Your attendance report is in Google Sheets. If Attendance Tracker saved you time today, could you leave a quick 5-star rating on Google Marketplace?</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <a id="celebrate-review-btn" href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" target="_blank" onclick="onCelebrateReviewClick(event)" style="background:#f59e0b;color:#111;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:700;font-size:.85rem;display:inline-block">⭐ Leave a 5-Star Review (5s)</a>
+        <a id="celebrate-review-btn" href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" target="_blank" onclick="onCelebrateReviewClick(event)" style="background:#f59e0b;color:#111;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:700;font-size:.85rem;display:inline-block">Leave a 5-Star Review (5s)</a>
         <a id="celebrate-share-link" href="#" style="background:transparent;border:1px solid #30363d;color:#e6edf3;text-decoration:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:.8rem;display:inline-block">Share with a teammate</a>
         <button onclick="closeCelebrateModal()" style="background:transparent;color:#9ca3af;border:none;font-size:.8rem;cursor:pointer;padding:4px">Maybe later</button>
       </div>
@@ -4551,15 +4601,17 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- ── Pro Upgrade Modal ── -->
   <div id="upgrade-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1100;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px)">
     <div style="background:#1e1f20;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px;max-width:380px;width:100%;box-shadow:0 24px 48px rgba(0,0,0,.6);position:relative;font-family:var(--font-sans);max-height:90vh;overflow-y:auto">
-      <button type="button" onclick="closeUpgradeModal()" aria-label="Close" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#9aa0a6;cursor:pointer;font-size:16px;line-height:1;padding:4px;border-radius:50%">✕</button>
+      <button type="button" onclick="closeUpgradeModal()" aria-label="Close" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#9aa0a6;cursor:pointer;font-size:16px;line-height:1;padding:4px;border-radius:50%">&times;</button>
 
       <!-- Top Deal Pill -->
       <div id="upgrade-deal-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(253,214,99,.12);border:1px solid rgba(253,214,99,.25);color:#fdd663;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;margin-bottom:12px;letter-spacing:.02em">
-        <span>✨ Limited Time Launch Deal · 50% Off</span>
+        <span>Limited Time Launch Deal · 50% Off</span>
       </div>
 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#fdd663,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 6px rgba(245,158,11,.3)">⭐</div>
+        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#fdd663,#f59e0b);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(245,158,11,.3)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#1e1f20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
         <h3 style="margin:0;font-size:1.25rem;font-weight:600;color:#e3e3e3;letter-spacing:-.01em">Upgrade to Pro</h3>
       </div>
       <p style="margin:0 0 14px;font-size:.82rem;color:#9aa0a6;line-height:1.45">Unlock unlimited Google Sheets exports, automatic background capture, and attendee certificates.</p>
@@ -4624,14 +4676,14 @@ window.addEventListener('DOMContentLoaded', () => {
             <span>Student attendance certificates &amp; multi-session reports</span>
           </div>
         </div>
-        <button type="button" id="btn-upgrade-individual" onclick="startUpgradeCheckout('individual', 'btn-upgrade-individual')" style="width:100%;background:rgba(88,166,255,.14);border:1px solid rgba(88,166,255,.3);color:#79c0ff;padding:9px 14px;border-radius:20px;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s ease">
+        <button type="button" id="btn-upgrade-individual" onclick="startUpgradeCheckout('educator', 'btn-upgrade-individual')" style="width:100%;background:rgba(88,166,255,.14);border:1px solid rgba(88,166,255,.3);color:#79c0ff;padding:9px 14px;border-radius:20px;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s ease">
           Get Educator Annual Pass — $4.99/yr
         </button>
       </div>
 
       <!-- Clean Low-Profile Review Exchange -->
       <div style="text-align:center;font-size:.74rem;color:#9aa0a6;margin-bottom:14px;line-height:1.4">
-        🎓 School budget tight? <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" id="upgrade-review-link" target="_blank" onclick="onUpgradeReviewClick(event)" style="color:#8ab4f8;text-decoration:underline">Leave an honest review</a> for 1 month free.
+        School budget tight? <a href="https://workspace.google.com/marketplace/app/attendance_tracker/829771833968" id="upgrade-review-link" target="_blank" onclick="onUpgradeReviewClick(event)" style="color:#8ab4f8;text-decoration:underline">Leave an honest review</a> for 1 month free.
       </div>
 
       <!-- Modal Footer -->
@@ -4648,7 +4700,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- ── Acquisition Source Modal (first sign-in) ── -->
   <div id="source-modal">
     <div class="modal-box" style="max-width:380px">
-      <div class="modal-title" id="source-modal-title">Quick question 👋</div>
+      <div class="modal-title" id="source-modal-title">Quick question</div>
       <div class="modal-subtitle" id="source-modal-subtitle">How did you find Attendance Tracker? Helps me figure out where to focus.</div>
       <select id="source-modal-select" class="match-select" onchange="onSourceSelectChange()" style="margin-bottom:10px">
         <option value="" disabled selected>Pick one…</option>
@@ -4683,11 +4735,11 @@ window.addEventListener('DOMContentLoaded', () => {
       <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px">Quick question</div>
       <div style="color:#8b949e;font-size:.85rem;margin-bottom:16px">What are you using Attendance Tracker for?</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <button onclick="submitSurvey('Teaching / classroom')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">👨‍🏫 Teaching / classroom</button>
-        <button onclick="submitSurvey('HR / employee meetings')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">👔 HR / employee meetings</button>
-        <button onclick="submitSurvey('Events / church')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">⛪ Events / church</button>
-        <button onclick="submitSurvey('Client / sales calls')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">🤝 Client / sales calls</button>
-        <button onclick="submitSurvey('Other')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">📝 Other</button>
+        <button onclick="submitSurvey('Teaching / classroom')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">Teaching / classroom</button>
+        <button onclick="submitSurvey('HR / employee meetings')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">HR / employee meetings</button>
+        <button onclick="submitSurvey('Events / church')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">Events / church</button>
+        <button onclick="submitSurvey('Client / sales calls')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">Client / sales calls</button>
+        <button onclick="submitSurvey('Other')" class="btn btn-secondary" style="text-align:left;justify-content:flex-start">Other</button>
       </div>
       <button onclick="closeSurveyModal()" style="background:transparent;border:none;color:#8b949e;font-size:.8rem;cursor:pointer">Skip</button>
     </div>

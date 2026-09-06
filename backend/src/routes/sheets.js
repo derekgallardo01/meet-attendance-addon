@@ -583,8 +583,9 @@ router.post('/save-to-sheets', async (req, res) => {
 
     // Monthly export quota check for Free users (2 exports per calendar month)
     const FREE_MONTHLY_EXPORT_LIMIT = 2;
+    let monthlyExports = 0;
     if (req.user && !proAllowed) {
-      const monthlyExports = await countUserMonthlyExports(req.user.domain, req.user.email);
+      monthlyExports = await countUserMonthlyExports(req.user.domain, req.user.email);
       if (monthlyExports >= FREE_MONTHLY_EXPORT_LIMIT) {
         log.info('sheets: free tier export quota reached', { domain: req.user.domain, email: req.user.email, count: monthlyExports });
         return res.status(402).json({
@@ -607,7 +608,12 @@ router.post('/save-to-sheets', async (req, res) => {
       },
       options: { sendEmail: b.sendEmail, autoExport: b.autoExport, proAllowed },
     });
-    res.json({ success: true, sheetUrl, isFirstExport });
+    res.json({
+      success: true,
+      sheetUrl,
+      isFirstExport,
+      quota: !proAllowed ? { used: monthlyExports + 1, limit: FREE_MONTHLY_EXPORT_LIMIT } : null,
+    });
   } catch (err) {
     if (err.status === 400) return res.status(400).json({ error: err.message });
     if (err.exportCode === 'DRIVE_PERMISSION_MISSING') {

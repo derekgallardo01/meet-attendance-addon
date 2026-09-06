@@ -3,7 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const express = require('express');
 const log = require('../lib/logger');
 const CONFIG = require('../config');
-const { getTenantPlan, setTenantPlan, getUserPlan, setUserPlan, logEvent } = require('../services/firestore');
+const { getTenantPlan, setTenantPlan, getUserPlan, setUserPlan, logEvent, countUserMonthlyExports } = require('../services/firestore');
 const { PERSONAL_EMAIL_DOMAINS } = require('../services/firestore/_core');
 
 // Personal-email tenants (gmail.com etc.) are shared by unrelated users, so they
@@ -44,9 +44,10 @@ router.post('/billing/checkout', requireAuth, async (req, res) => {
   const domain = req.user.domain;
   const email = req.user.email;
   const isEducator = req.body && req.body.plan === 'educator';
-  const individual = isEducator
+  const isLifetime = req.body && req.body.plan === 'lifetime';
+  const individual = (isEducator || isLifetime)
     ? true
-    : (req.body && (req.body.plan === 'team' || req.body.plan === 'lifetime')
+    : (req.body && req.body.plan === 'team'
       ? false
       : (req.body && req.body.plan === 'individual' ? true : isPersonalDomain(domain)));
   // Personal-email users buy the INDIVIDUAL (per-user) plan; Workspace domains
@@ -57,9 +58,11 @@ router.post('/billing/checkout', requireAuth, async (req, res) => {
   const annual = (req.body || {}).interval === 'annual';
   const priceId = isEducator
     ? (process.env.STRIPE_EDUCATOR_PRICE_ID || process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID)
-    : (individual
-      ? (annual && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID
-      : (annual && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID);
+    : (isLifetime
+      ? (process.env.STRIPE_INDIVIDUAL_LIFETIME_PRICE_ID || process.env.STRIPE_INDIVIDUAL_PRICE_ID || process.env.STRIPE_PRICE_ID)
+      : (individual
+        ? (annual && process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID) || process.env.STRIPE_INDIVIDUAL_PRICE_ID
+        : (annual && process.env.STRIPE_ANNUAL_PRICE_ID) || process.env.STRIPE_PRICE_ID));
   if (!stripe || !priceId) {
     return res.status(503).json({ error: 'Billing is not configured yet.' });
   }
@@ -73,8 +76,10 @@ router.post('/billing/checkout', requireAuth, async (req, res) => {
     const backTo = individual ? 'history.html' : 'team.html';
     // Retrieve price details to dynamically use 'subscription' for recurring plans
     // or 'payment' for one-time / lifetime purchases.
-    let isRecurring = true;
-    if (stripe.prices && typeof stripe.prices.retrieve === 'function') {
+    let isRecurring = !isLifetime;
+    if (isLifetime) {
+      isRecurring = false;
+    } else if (stripe.prices && typeof stripe.prices.retrieve === 'function') {
       try {
         const priceObj = await stripe.prices.retrieve(priceId);
         isRecurring = priceObj ? (priceObj.type === 'recurring' || !!priceObj.recurring) : true;
@@ -230,12 +235,22 @@ router.get('/billing/status', requireAuth, async (req, res) => {
     const annualAvailable = individual
       ? !!process.env.STRIPE_INDIVIDUAL_ANNUAL_PRICE_ID
       : !!process.env.STRIPE_ANNUAL_PRICE_ID;
+    let exportQuota = null;
+    if (plan.plan !== 'pro' && typeof countUserMonthlyExports === 'function') {
+      try {
+        const used = await countUserMonthlyExports(req.user.domain, req.user.email);
+        exportQuota = { used, limit: 2 };
+      } catch (e) {
+        log.warn('billing: countUserMonthlyExports failed in status', { error: e.message });
+      }
+    }
     res.json({
       ...plan,
       individual,
       billingConfigured: individual ? individualBillingConfigured() : billingConfigured(),
       annualAvailable,
       educatorAvailable: !!process.env.STRIPE_EDUCATOR_PRICE_ID,
+      exportQuota,
     });
   } catch (err) {
     log.error('billing: status failed', { domain: req.user.domain, error: err.message });

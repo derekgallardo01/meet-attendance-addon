@@ -22,6 +22,7 @@ jest.mock('../../src/services/firestore', () => ({
   getUser: jest.fn(),
   updateUserTokens: jest.fn(),
   getTeamAdminStatus: jest.fn(), // requireTeamAdmin (runs before requireProPlan on /team/overview)
+  countUserMonthlyExports: jest.fn().mockResolvedValue(0),
 }));
 
 const firestore = require('../../src/services/firestore');
