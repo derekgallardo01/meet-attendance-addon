@@ -29,7 +29,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://apis.google.com", "https://www.gstatic.com", "https://browser.sentry-cdn.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
       frameSrc: ["https://accounts.google.com"],
       frameAncestors: ["https://meet.google.com", "'self'"],
       connectSrc: ["'self'", "https://accounts.google.com", "https://*.ingest.us.sentry.io"],
